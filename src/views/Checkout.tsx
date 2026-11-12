@@ -240,7 +240,7 @@ export default function Checkout() {
             {/* Payment Method Selector */}
             <div style={{ marginTop: '2.5rem', borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
               <h3 className="serif" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Payment Method</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.25rem' }}>
+              <div style={{ marginTop: '1.25rem' }}>
                 {/* UPI QR Payment */}
                 <div
                   className={`payment-method-card ${paymentMethod === 'upi' ? 'selected' : ''}`}
@@ -272,40 +272,6 @@ export default function Checkout() {
                   </div>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     Scan QR code via GPay, PhonePe, Paytm or BHIM & enter UTR.
-                  </p>
-                </div>
-
-                {/* Cash on Delivery */}
-                <div
-                  className={`payment-method-card ${paymentMethod === 'cod' ? 'selected' : ''}`}
-                  onClick={() => setPaymentMethod('cod')}
-                  style={{
-                    border: paymentMethod === 'cod' ? '2px solid var(--accent)' : '1px solid var(--border)',
-                    padding: '1.25rem',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    transition: 'var(--transition)',
-                    backgroundColor: paymentMethod === 'cod' ? '#fff' : 'transparent',
-                    boxShadow: paymentMethod === 'cod' ? 'var(--shadow-soft)' : 'none',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                    <div style={{
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      border: '2px solid var(--accent)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: paymentMethod === 'cod' ? 'var(--accent)' : 'transparent',
-                    }}>
-                      {paymentMethod === 'cod' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />}
-                    </div>
-                    <span style={{ fontWeight: 600, fontSize: '0.8rem', letterSpacing: '0.1em' }}>CASH ON DELIVERY</span>
-                  </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Pay in cash when your parcel is delivered to your doorstep.
                   </p>
                 </div>
               </div>

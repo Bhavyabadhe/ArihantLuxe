@@ -26,7 +26,6 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const dispatch = useDispatch();
 
-  // Safely resolve the primary image from images array, image, or imageUrl
   const rawImage =
     (Array.isArray(product.images) && product.images[0]) ||
     product.imageUrl ||
@@ -34,12 +33,14 @@ export default function ProductCard({ product }: ProductCardProps) {
   const mainImage = Array.isArray(rawImage)
     ? rawImage[0]
     : typeof rawImage === 'string' && rawImage.includes(',')
-    ? rawImage.split(',')[0].trim()
-    : rawImage || 'https://placehold.co/600x600/png';
+      ? rawImage.split(',')[0].trim()
+      : rawImage || 'https://placehold.co/600x600/png';
 
-  // Use the slug from the database row, falling back to id if not present
   const slug = product.slug || String(product.id);
-  const numericPrice = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
+  const numericPrice =
+    typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
+
+  const isJewellery = product.category?.toLowerCase() === 'jewellery';
 
   return (
     <div className="product-card">
@@ -58,8 +59,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                     name: product.name,
                     price: numericPrice,
                     image: mainImage,
-                    size: product.size?.[0] || 'M',
-                    color: product.color?.[0] || 'Black',
+                    size: isJewellery ? undefined : product.size?.[0] || 'M',
+                    color: isJewellery ? undefined : product.color?.[0] || 'Black',
                   })
                 );
               }}
