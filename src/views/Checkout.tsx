@@ -357,8 +357,10 @@ export default function Checkout() {
                 <img src={item.image} alt={item.name} className="checkout-item-img" />
                 <div className="checkout-item-info">
                   <p className="checkout-item-name">{item.name}</p>
-                  <p className="checkout-item-qty">SIZE: {item.size} | QTY: {item.quantity}</p>
-                  <p className='checkout-item-color'>COLOR: {item.color}</p>
+                  <p className="checkout-item-qty">
+                    {item.size ? `SIZE: ${item.size} | ` : ''}QTY: {item.quantity}
+                  </p>
+                  {item.color ? <p className='checkout-item-color'>COLOR: {item.color}</p> : null}
                   <p className="checkout-item-price">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                 </div>
               </div>

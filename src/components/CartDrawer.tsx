@@ -36,8 +36,8 @@ export default function CartDrawer({ open, onClose }: CartDrawerProps) {
                     <div>
                       <p className="cart-item-name">{item.name}</p>
                       <p className="cart-item-price">Rs.{item.price.toFixed(2)}</p>
-                      <p className="cart-item-size">Size: {item.size}</p>
-                      <p className="cart-item-color">Color: {item.color}</p>
+                      {item.size ? <p className="cart-item-size">Size: {item.size}</p> : null}
+                      {item.color ? <p className="cart-item-color">Color: {item.color}</p> : null}
                     </div>
                     <div className="qty-controls">
                       <button onClick={() => dispatch(updateQuantity({ id: item.id, size: item.size, color: item.color, quantity: Math.max(1, item.quantity - 1) }))}>−</button>

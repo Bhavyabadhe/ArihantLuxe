@@ -25,7 +25,7 @@ function extractImages(prod: any): string[] {
       try {
         const parsed = JSON.parse(trimmed);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch {}
+      } catch { }
     }
     if (trimmed.includes(',')) {
       return trimmed.split(',').map((s: string) => s.trim()).filter(Boolean);
@@ -116,6 +116,18 @@ export default function ProductDetail() {
   const sizes = Array.isArray(product.size) && product.size.length > 0 ? product.size : ['M', 'L', 'XL', 'XXL'];
   const colors = Array.isArray(product.color) && product.color.length > 0 ? product.color : ['Black', 'White', 'Beige'];
 
+  // Check if product is jewellery
+  const categoryLower = (product.category || '').toLowerCase().trim();
+  const isJewellery =
+    categoryLower.includes('jewel') ||
+    categoryLower === 'jewellery' ||
+    categoryLower === 'jewelry' ||
+    categoryLower === 'ring' ||
+    categoryLower === 'necklace' ||
+    categoryLower === 'earring' ||
+    categoryLower === 'bracelet' ||
+    categoryLower === 'ornament';
+
   const handleAddToCart = () => {
     dispatch(
       addToCart({
@@ -123,8 +135,8 @@ export default function ProductDetail() {
         name: product.name,
         price: price,
         image: currentImage,
-        size: selectedSize,
-        color: selectedColor,
+        size: isJewellery ? '' : selectedSize,
+        color: isJewellery ? '' : selectedColor,
       })
     );
     setAddedMessage(true);
@@ -202,65 +214,70 @@ export default function ProductDetail() {
             {product.description || 'Crafted with premium materials and signature minimalist aesthetics. Designed for durability, comfort, and timeless elegance.'}
           </p>
 
-          {/* Size Selector */}
-          <div style={{ marginTop: '1.5rem' }}>
-            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, display: 'block', marginBottom: '0.6rem' }}>
-              Select Size: {selectedSize}
-            </span>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              {sizes.map((s: string) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setSelectedSize(s)}
-                  style={{
-                    padding: '0.6rem 1.2rem',
-                    border: selectedSize === s ? '1px solid var(--text)' : '1px solid var(--border)',
-                    background: selectedSize === s ? 'var(--text)' : 'transparent',
-                    color: selectedSize === s ? '#fff' : 'var(--text)',
-                    cursor: 'pointer',
-                    fontSize: '0.8rem',
-                    letterSpacing: '0.05em',
-                    transition: 'var(--transition)',
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
+          {/* Size Selector (Hidden for Jewellery) */}
+          {!isJewellery && (
+            <div style={{ marginTop: '1.5rem' }}>
+              <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, display: 'block', marginBottom: '0.6rem' }}>
+                Select Size: {selectedSize}
+              </span>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                {sizes.map((s: string) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSelectedSize(s)}
+                    style={{
+                      padding: '0.6rem 1.2rem',
+                      border: selectedSize === s ? '1px solid var(--text)' : '1px solid var(--border)',
+                      background: selectedSize === s ? 'var(--text)' : 'transparent',
+                      color: selectedSize === s ? '#fff' : 'var(--text)',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      letterSpacing: '0.05em',
+                      transition: 'var(--transition)',
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Color Selector */}
-          <div style={{ marginTop: '1.5rem', marginBottom: '2rem' }}>
-            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, display: 'block', marginBottom: '0.6rem' }}>
-              Color: {selectedColor}
-            </span>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              {colors.map((c: string) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setSelectedColor(c)}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    border: selectedColor === c ? '1px solid var(--accent)' : '1px solid var(--border)',
-                    background: selectedColor === c ? 'var(--bg-alt)' : 'transparent',
-                    color: 'var(--text)',
-                    cursor: 'pointer',
-                    fontSize: '0.8rem',
-                    transition: 'var(--transition)',
-                  }}
-                >
-                  {c}
-                </button>
-              ))}
+          {/* Color Selector (Hidden for Jewellery) */}
+          {!isJewellery && (
+            <div style={{ marginTop: '1.5rem', marginBottom: '2rem' }}>
+              <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, display: 'block', marginBottom: '0.6rem' }}>
+                Color: {selectedColor}
+              </span>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                {colors.map((c: string) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setSelectedColor(c)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      border: selectedColor === c ? '1px solid var(--accent)' : '1px solid var(--border)',
+                      background: selectedColor === c ? 'var(--bg-alt)' : 'transparent',
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      transition: 'var(--transition)',
+                    }}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Add to Cart Button */}
           <button
             type="button"
             className="add-to-cart-large"
+            style={{ marginTop: isJewellery ? '2.5rem' : '0' }}
             onClick={handleAddToCart}
           >
             {addedMessage ? '✓ Added to Shopping Bag' : 'Add to Bag'}
