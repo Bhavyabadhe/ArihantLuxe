@@ -5,38 +5,8 @@ import type { RootState } from '../store/store';
 import { clearCart } from '../store/cartSlice';
 import { createOrder } from '../firebase';
 
-declare global {
-  interface Window {
-    Razorpay?: new (options: RazorpayOptions) => { open: () => void };
-  }
-}
-
-interface RazorpayCheckoutResponse {
-  razorpay_payment_id: string;
-}
-
-interface RazorpayOptions {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  image: string;
-  handler: (response: RazorpayCheckoutResponse) => Promise<void>;
-  prefill: {
-    name: string;
-    email: string;
-  };
-  notes: {
-    orderId: string;
-  };
-  theme: {
-    color: string;
-  };
-  modal: {
-    ondismiss: () => void;
-  };
-}
+const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || 'arihantluxe@upi';
+const UPI_NAME = process.env.NEXT_PUBLIC_UPI_NAME || 'Arihant Luxe';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -50,7 +20,16 @@ export default function Checkout() {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [country] = useState('India');
-  const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
+  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cod'>('upi');
+
+  // QR Modal & UTR state
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [utrNumber, setUtrNumber] = useState('');
+  const [utrError, setUtrError] = useState('');
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [submittingUtr, setSubmittingUtr] = useState(false);
+
+  // Notification state
   const [notification, setNotification] = useState<{
     title: string;
     message: string;
@@ -68,34 +47,41 @@ export default function Checkout() {
   const shipping = subtotal < 500 ? 70 : 0;
   const total = subtotal + shipping;
 
-  const handlePayment = async () => {
-    console.log('handlePayment triggered');
-    if (!email || !fullName || !address || !city || !country) {
+  // Generate standard UPI Payment URL
+  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Arihant Luxe Order')}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(upiPayUrl)}`;
+
+  const validateShipping = (): boolean => {
+    if (!email.trim() || !fullName.trim() || !address.trim() || !city.trim() || !country.trim()) {
       setNotification({
         title: 'Missing Information',
         message: 'Please fill in all shipping details to proceed with checkout.',
         type: 'warning',
       });
-      return;
+      return false;
     }
+    return true;
+  };
 
-    setIsLoading(true);
+  const handleCheckoutSubmit = async () => {
+    if (!validateShipping()) return;
 
-    try {
-      const orderId = await createOrder({
-        userEmail: email,
-        userFullName: fullName,
-        items: items,
-        subtotal: subtotal,
-        shippingFee: shipping,
-        total: total,
-        shippingAddress: { email, fullName, address, city, country },
-        status: paymentMethod === 'cod' ? 'cod_pending' : 'created',
-        paymentMethod: paymentMethod,
-        createdAt: Date.now(),
-      });
+    if (paymentMethod === 'cod') {
+      setIsLoading(true);
+      try {
+        const orderId = await createOrder({
+          userEmail: email.trim(),
+          userFullName: fullName.trim(),
+          items: items,
+          subtotal: subtotal,
+          shippingFee: shipping,
+          total: total,
+          shippingAddress: { email: email.trim(), fullName: fullName.trim(), address: address.trim(), city: city.trim(), country },
+          status: 'cod_pending',
+          paymentMethod: 'cod',
+          createdAt: Date.now(),
+        });
 
-      if (paymentMethod === 'cod') {
         dispatch(clearCart());
         setNotification({
           title: 'Order Placed!',
@@ -103,90 +89,74 @@ export default function Checkout() {
           type: 'success',
           onClose: () => navigate('/account'),
         });
-        setIsLoading(false);
-        return;
-      }
-
-      if (!window.Razorpay) {
+      } catch (err: any) {
+        console.error('COD Order Error:', err);
         setNotification({
-          title: 'Payment Gateway Offline',
-          message: `Order #${orderId.slice(0, 8).toUpperCase()} was saved successfully, but we could not load the payment screen. Please contact support or retry from your account page.`,
-          type: 'warning',
-          onClose: () => navigate('/account'),
+          title: 'Order Failed',
+          message: 'Could not register your order. Please check your network connection and try again.',
+          type: 'error',
         });
+      } finally {
         setIsLoading(false);
-        return;
       }
-
-      const options: RazorpayOptions = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: Math.round(total * 100),
-        currency: 'INR',
-        name: 'Arihant Luxe',
-        description: 'Order Payment',
-        image: '/favicon.png',
-        handler: async (response) => {
-          console.log('Razorpay payment successful, response:', response);
-          try {
-            await updateOrderStatus(orderId, {
-              status: 'paid',
-              paymentId: response.razorpay_payment_id,
-            });
-
-            console.log('Order marked paid successfully, ID:', orderId);
-            dispatch(clearCart());
-            setNotification({
-              title: 'Payment Successful!',
-              message: `Thank you for shopping with Arihant Luxe! Your order #${orderId.slice(0, 8).toUpperCase()} is confirmed. We are starting to process your shipment immediately.`,
-              type: 'success',
-              onClose: () => navigate('/account'),
-            });
-          } catch (err) {
-            console.error('CRITICAL: Order creation failed after payment:', err);
-            setNotification({
-              title: 'Order Processing Alert',
-              message: `Your payment was successful, but we encountered an issue registering your order. Please contact our support team immediately with your Payment ID: ${response.razorpay_payment_id}.`,
-              type: 'error',
-            });
-          } finally {
-            setIsLoading(false);
-          }
-        },
-        prefill: {
-          name: fullName,
-          email: email,
-        },
-        notes: {
-          orderId,
-        },
-        theme: {
-          color: '#1a1a1a',
-        },
-        modal: {
-          ondismiss: () => {
-            console.log('Razorpay modal dismissed');
-            setNotification({
-              title: 'Payment Dismissed',
-              message: `Your checkout details are saved. You can complete the payment anytime by checking your account history.`,
-              type: 'warning',
-            });
-            setIsLoading(false);
-          }
-        }
-      };
-
-      console.log('Opening Razorpay modal for saved order:', orderId);
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (err) {
-      console.error('Failed to initialize Razorpay:', err);
-      setNotification({
-        title: 'Initialization Failed',
-        message: 'Could not initialize the checkout payment flow. Please verify your connection and try again.',
-        type: 'error',
-      });
-      setIsLoading(false);
+      return;
     }
+
+    // For UPI, open the QR & UTR input modal
+    setUtrError('');
+    setShowQrModal(true);
+  };
+
+  const handleUtrSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanUtr = utrNumber.trim();
+    if (!cleanUtr) {
+      setUtrError('Please enter the 12-digit UTR / Reference Number after completing payment.');
+      return;
+    }
+    if (cleanUtr.length < 6) {
+      setUtrError('Please enter a valid UTR / Transaction Reference number.');
+      return;
+    }
+
+    setSubmittingUtr(true);
+    setUtrError('');
+
+    try {
+      const orderId = await createOrder({
+        userEmail: email.trim(),
+        userFullName: fullName.trim(),
+        items: items,
+        subtotal: subtotal,
+        shippingFee: shipping,
+        total: total,
+        shippingAddress: { email: email.trim(), fullName: fullName.trim(), address: address.trim(), city: city.trim(), country },
+        status: 'paid_pending_verification',
+        paymentMethod: 'upi_qr',
+        paymentId: cleanUtr,
+        createdAt: Date.now(),
+      });
+
+      setShowQrModal(false);
+      dispatch(clearCart());
+      setNotification({
+        title: 'Payment Submitted!',
+        message: `Your order #${orderId.slice(0, 8).toUpperCase()} has been received with UTR Ref: ${cleanUtr}. We will verify your transaction and update your order tracking shortly.`,
+        type: 'success',
+        onClose: () => navigate('/account'),
+      });
+    } catch (err: any) {
+      console.error('UPI Order error:', err);
+      setUtrError('Failed to record your order. Please try submitting again.');
+    } finally {
+      setSubmittingUtr(false);
+    }
+  };
+
+  const copyUpiId = () => {
+    navigator.clipboard.writeText(UPI_ID);
+    setCopiedUpi(true);
+    setTimeout(() => setCopiedUpi(false), 2000);
   };
 
   if (items.length === 0 && !notification) {
@@ -205,7 +175,7 @@ export default function Checkout() {
         <section className="checkout-form-section">
           <div className="checkout-header">
             <h1 className="serif">Checkout</h1>
-            <p className="checkout-subtitle">SHIPPING DETAILS AND ORDER SUMMARY.</p>
+            <p className="checkout-subtitle">SHIPPING DETAILS AND PAYMENT SUMMARY.</p>
           </div>
 
           <div className="checkout-form-group">
@@ -218,6 +188,7 @@ export default function Checkout() {
                   className="auth-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
                 />
               </div>
               <div className="auth-field">
@@ -227,6 +198,7 @@ export default function Checkout() {
                   className="auth-input"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Your Name"
                 />
               </div>
             </div>
@@ -238,7 +210,7 @@ export default function Checkout() {
                 className="auth-input"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="Street address, apartment, etc."
+                placeholder="Street address, apartment, building, etc."
               />
             </div>
 
@@ -250,6 +222,7 @@ export default function Checkout() {
                   className="auth-input"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
+                  placeholder="City"
                 />
               </div>
               <div className="auth-field">
@@ -268,17 +241,18 @@ export default function Checkout() {
             <div style={{ marginTop: '2.5rem', borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
               <h3 className="serif" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Payment Method</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.25rem' }}>
+                {/* UPI QR Payment */}
                 <div
-                  className={`payment-method-card ${paymentMethod === 'online' ? 'selected' : ''}`}
-                  onClick={() => setPaymentMethod('online')}
+                  className={`payment-method-card ${paymentMethod === 'upi' ? 'selected' : ''}`}
+                  onClick={() => setPaymentMethod('upi')}
                   style={{
-                    border: paymentMethod === 'online' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                    border: paymentMethod === 'upi' ? '2px solid var(--accent)' : '1px solid var(--border)',
                     padding: '1.25rem',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     transition: 'var(--transition)',
-                    backgroundColor: paymentMethod === 'online' ? '#fff' : 'transparent',
-                    boxShadow: paymentMethod === 'online' ? 'var(--shadow-soft)' : 'none',
+                    backgroundColor: paymentMethod === 'upi' ? '#fff' : 'transparent',
+                    boxShadow: paymentMethod === 'upi' ? 'var(--shadow-soft)' : 'none',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
@@ -290,15 +264,18 @@ export default function Checkout() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      background: paymentMethod === 'online' ? 'var(--accent)' : 'transparent',
+                      background: paymentMethod === 'upi' ? 'var(--accent)' : 'transparent',
                     }}>
-                      {paymentMethod === 'online' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />}
+                      {paymentMethod === 'upi' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />}
                     </div>
-                    <span style={{ fontWeight: 600, fontSize: '0.8rem', letterSpacing: '0.1em' }}>ONLINE PAYMENT</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.8rem', letterSpacing: '0.1em' }}>UPI / QR CODE</span>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Pay securely with Cards, UPI, or NetBanking.</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Scan QR code via GPay, PhonePe, Paytm or BHIM & enter UTR.
+                  </p>
                 </div>
 
+                {/* Cash on Delivery */}
                 <div
                   className={`payment-method-card ${paymentMethod === 'cod' ? 'selected' : ''}`}
                   onClick={() => setPaymentMethod('cod')}
@@ -327,7 +304,9 @@ export default function Checkout() {
                     </div>
                     <span style={{ fontWeight: 600, fontSize: '0.8rem', letterSpacing: '0.1em' }}>CASH ON DELIVERY</span>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Pay in cash when your order is delivered.</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Pay in cash when your parcel is delivered to your doorstep.
+                  </p>
                 </div>
               </div>
             </div>
@@ -338,11 +317,12 @@ export default function Checkout() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
               <button
+                type="button"
                 className="checkout-pay-btn"
                 disabled={isLoading}
-                onClick={handlePayment}
+                onClick={handleCheckoutSubmit}
               >
-                {isLoading ? 'Processing...' : paymentMethod === 'cod' ? 'Place Order (COD)' : 'Pay Now'}
+                {isLoading ? 'Processing...' : paymentMethod === 'cod' ? 'Place Order (COD)' : `Pay Rs.${total.toFixed(2)} with UPI QR`}
               </button>
             </div>
           </div>
@@ -384,6 +364,201 @@ export default function Checkout() {
         </section>
       </div>
 
+      {/* UPI QR & UTR Popup Modal */}
+      {showQrModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem',
+          animation: 'fadeIn 0.25s ease-out',
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '12px',
+            maxWidth: '460px',
+            width: '100%',
+            maxHeight: '92vh',
+            overflowY: 'auto',
+            padding: '2rem',
+            position: 'relative',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.3)',
+            border: '1px solid var(--border)',
+            textAlign: 'center',
+          }}>
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowQrModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                background: 'transparent',
+                border: 'none',
+                fontSize: '1.25rem',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                lineHeight: 1,
+              }}
+              aria-label="Close modal"
+            >
+              ✕
+            </button>
+
+            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--accent)', fontWeight: 600 }}>
+              Scan & Pay
+            </span>
+            <h2 className="serif" style={{ fontSize: '1.85rem', margin: '0.35rem 0 0.25rem', color: 'var(--text)' }}>
+              UPI Payment
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+              Scan the QR code with any UPI app to pay
+            </p>
+
+            {/* Total Amount Badge */}
+            <div style={{
+              display: 'inline-block',
+              padding: '0.5rem 1.5rem',
+              backgroundColor: 'var(--bg-alt)',
+              borderRadius: '30px',
+              marginBottom: '1.25rem',
+              border: '1px solid var(--border)',
+            }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: '0.4rem' }}>Amount to Pay:</span>
+              <strong style={{ fontSize: '1.2rem', color: 'var(--text)' }}>Rs.{total.toFixed(2)}</strong>
+            </div>
+
+            {/* QR Code Container */}
+            <div style={{
+              background: '#ffffff',
+              padding: '1rem',
+              borderRadius: '8px',
+              display: 'inline-block',
+              border: '1px solid var(--border)',
+              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.05)',
+              marginBottom: '1rem',
+            }}>
+              <img
+                src={qrCodeUrl}
+                alt="UPI Payment QR Code"
+                style={{
+                  width: '210px',
+                  height: '210px',
+                  display: 'block',
+                  margin: '0 auto',
+                }}
+              />
+            </div>
+
+            {/* UPI ID Row */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'var(--bg-alt)',
+              padding: '0.6rem 0.9rem',
+              borderRadius: '6px',
+              marginBottom: '1.25rem',
+              border: '1px dashed var(--border)',
+            }}>
+              <div style={{ textAlign: 'left' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  UPI ID
+                </span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>
+                  {UPI_ID}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={copyUpiId}
+                style={{
+                  padding: '0.35rem 0.8rem',
+                  fontSize: '0.75rem',
+                  letterSpacing: '0.05em',
+                  background: copiedUpi ? '#166534' : 'var(--text)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {copiedUpi ? '✓ Copied' : 'Copy'}
+              </button>
+            </div>
+
+            {/* UTR Input Form */}
+            <form onSubmit={handleUtrSubmit} style={{ textAlign: 'left', marginTop: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '0.4rem' }}>
+                Enter 12-Digit UTR / Ref Number <span style={{ color: '#b91c1c' }}>*</span>
+              </label>
+              <input
+                type="text"
+                className="auth-input"
+                value={utrNumber}
+                onChange={(e) => setUtrNumber(e.target.value)}
+                placeholder="e.g. 412345678901"
+                style={{
+                  width: '100%',
+                  padding: '0.8rem 1rem',
+                  fontSize: '0.9rem',
+                  borderRadius: '4px',
+                  border: utrError ? '1px solid #b91c1c' : '1px solid var(--border)',
+                  marginBottom: '0.5rem',
+                  outline: 'none',
+                }}
+              />
+
+              {utrError && (
+                <p style={{ color: '#b91c1c', fontSize: '0.78rem', marginBottom: '0.75rem', lineHeight: '1.4' }}>
+                  {utrError}
+                </p>
+              )}
+
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4', marginBottom: '1.25rem' }}>
+                Tip: You can find the 12-digit UTR / UPI Reference ID under transaction details in your GPay, PhonePe, or Paytm app.
+              </p>
+
+              <button
+                type="submit"
+                disabled={submittingUtr}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'var(--text)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '1rem',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  cursor: submittingUtr ? 'not-allowed' : 'pointer',
+                  borderRadius: '4px',
+                  transition: 'background-color 0.2s ease',
+                  opacity: submittingUtr ? 0.7 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (!submittingUtr) e.currentTarget.style.backgroundColor = 'var(--accent)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!submittingUtr) e.currentTarget.style.backgroundColor = 'var(--text)';
+                }}
+              >
+                {submittingUtr ? 'Verifying & Recording...' : 'Confirm Order with UTR'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Custom Notification Modal */}
       {notification && (
         <div style={{
@@ -398,16 +573,6 @@ export default function Checkout() {
           zIndex: 9999,
           animation: 'fadeIn 0.3s ease-out',
         }}>
-          <style>{`
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-            @keyframes slideUp {
-              from { opacity: 0; transform: translateY(20px); }
-              to { opacity: 1; transform: translateY(0); }
-            }
-          `}</style>
           <div style={{
             backgroundColor: '#ffffff',
             borderRadius: 'var(--radius-md)',

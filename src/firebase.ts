@@ -56,7 +56,7 @@ export interface OrderDoc {
     country: string;
   };
   status: string;
-  paymentMethod: 'online' | 'cod';
+  paymentMethod: 'online' | 'cod' | 'upi_qr' | string;
   createdAt: number;
   paymentId?: string;
 }
