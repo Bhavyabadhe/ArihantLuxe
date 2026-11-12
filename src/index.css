@@ -2568,7 +2568,7 @@ a {
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4rem;
+  gap: 28rem;
   margin-top: 1.5rem;
 }
 
@@ -2650,12 +2650,136 @@ a {
   .Categories {
     gap: 2rem;
   }
+
   .circle,
   .circle2 {
     width: 130px;
     height: 130px;
   }
+
   .cate {
     font-size: 2.2rem;
   }
+}
+
+/* ── Dedicated Category Pages (Fashion & Jewellery) ── */
+.category-page {
+  min-height: 80vh;
+}
+
+.category-hero {
+  position: relative;
+  height: 52vh;
+  min-height: 380px;
+  max-height: 540px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-align: center;
+  color: #ffffff;
+}
+
+.category-hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.category-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 10, 10, 0.45) 0%,
+    rgba(10, 10, 10, 0.65) 100%
+  );
+  z-index: 2;
+}
+
+.category-hero-content {
+  position: relative;
+  z-index: 3;
+  max-width: 800px;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  opacity: 0.85;
+}
+
+.breadcrumbs a {
+  color: #ffffff;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.breadcrumbs a:hover {
+  color: var(--accent);
+}
+
+.category-hero .hero-sub {
+  color: var(--accent-light, #e5d1a8);
+  font-size: 0.85rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.category-hero .hero-title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+  color: #ffffff;
+}
+
+.category-hero-desc {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  max-width: 600px;
+  font-weight: 300;
+}
+
+.sort-select {
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.sort-select:focus {
+  border-color: var(--accent);
+}
+
+.no-results-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-top: 1rem;
 }

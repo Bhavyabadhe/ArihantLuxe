@@ -22,6 +22,8 @@ import NotFound from './views/NotFound';
 import BlogList from './views/BlogList';
 import BlogDetail from './views/BlogDetail';
 import BlogAdmin from './views/BlogAdmin';
+import Fashion from './views/Fashion';
+import Jewellery from './views/Jewellery';
 import { Analytics } from "@vercel/analytics/react"
 
 function AppLayout() {
@@ -48,6 +50,10 @@ function AppLayout() {
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/fashion" element={<Fashion />} />
+          <Route path="/clothing" element={<Fashion />} />
+          <Route path="/jewellery" element={<Jewellery />} />
+          <Route path="/jewelry" element={<Jewellery />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />

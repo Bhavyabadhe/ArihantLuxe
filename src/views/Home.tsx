@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import ProductCard, { Product } from '../components/ProductCard';
 
 const DEFAULT_CATEGORIES = ['All', 'Clothing', 'Jewellery'];
@@ -78,15 +79,15 @@ export default function Home() {
         <div className="Categories">
           <div
             className="category-card"
-            onClick={() => handleCategoryClick('Clothing')}
+            onClick={() => handleCategoryClick('Fashion')}
           >
             <a
               href="#shop"
               className="category-circle-wrapper"
-              aria-label="Shop Clothing"
+              aria-label="Shop Fashion"
               onClick={(e) => {
                 e.preventDefault();
-                handleCategoryClick('Clothing');
+                handleCategoryClick('/Fashion');
               }}
             >
               <div className="circle">
@@ -97,7 +98,7 @@ export default function Home() {
                 />
               </div>
             </a>
-            <h3 className="category-title serif">Clothing</h3>
+            <h3 className="category-title serif">Fashion</h3>
             <span className="category-subtitle">Tailored Essentials</span>
           </div>
 
