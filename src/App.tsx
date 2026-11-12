@@ -24,6 +24,7 @@ import BlogDetail from './views/BlogDetail';
 import BlogAdmin from './views/BlogAdmin';
 import Fashion from './views/Fashion';
 import Jewellery from './views/Jewellery';
+import AdminProducts from './views/AdminProducts';
 import { Analytics } from "@vercel/analytics/react"
 
 function AppLayout() {
@@ -64,6 +65,8 @@ function AppLayout() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/admin" element={<AdminProducts />} />
+          <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/journal" element={<BlogList />} />
           <Route path="/journal/admin" element={<BlogAdmin />} />
           <Route path="/journal/:id" element={<BlogDetail />} />

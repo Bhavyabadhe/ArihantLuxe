@@ -26,7 +26,11 @@ export async function POST(request: Request) {
         .trim()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '') + '-' + Date.now();
-    const image = body.image || body.imageUrl || null;
+
+    const imagesList: string[] = Array.isArray(body.images) && body.images.length > 0
+      ? body.images.filter(Boolean)
+      : body.image ? [body.image] : [];
+    const image = imagesList[0] || body.image || null;
     const price = typeof body.price === 'number' ? body.price : parseFloat(body.price || '0');
     const stock = typeof body.stock === 'number' ? body.stock : parseInt(body.stock || '0', 10);
 
@@ -37,6 +41,7 @@ export async function POST(request: Request) {
         description: body.description || '',
         price,
         image,
+        images: imagesList,
         category: body.category || 'All',
         badge: body.badge || null,
         stock,
