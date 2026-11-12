@@ -46,14 +46,6 @@ export default function Home() {
     return matchCat && matchSearch;
   });
 
-  const handleCategoryClick = (categoryName: string) => {
-    setActiveCategory(categoryName);
-    const shopEl = document.getElementById('shop');
-    if (shopEl) {
-      shopEl.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <>
       {/* Hero */}
@@ -77,55 +69,41 @@ export default function Home() {
           <h2 className="cate">Categories</h2>
         </div>
         <div className="Categories">
-          <div
+          <Link
+            to="/fashion"
             className="category-card"
-            onClick={() => handleCategoryClick('Fashion')}
+            aria-label="Shop Fashion"
           >
-            <a
-              href="#shop"
-              className="category-circle-wrapper"
-              aria-label="Shop Fashion"
-              onClick={(e) => {
-                e.preventDefault();
-                handleCategoryClick('/Fashion');
-              }}
-            >
+            <div className="category-circle-wrapper">
               <div className="circle">
                 <img
                   src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop&q=80"
-                  alt="Clothing"
+                  alt="Fashion"
                   className="category-img"
                 />
               </div>
-            </a>
+            </div>
             <h3 className="category-title serif">Fashion</h3>
             <span className="category-subtitle">Tailored Essentials</span>
-          </div>
+          </Link>
 
-          <div
+          <Link
+            to="/jewellery"
             className="category-card"
-            onClick={() => handleCategoryClick('Jewellery')}
+            aria-label="Shop Jewellery"
           >
-            <a
-              href="#shop"
-              className="category-circle-wrapper"
-              aria-label="Shop Jewellery"
-              onClick={(e) => {
-                e.preventDefault();
-                handleCategoryClick('Jewellery');
-              }}
-            >
-              <div className="circle2">
+            <div className="category-circle-wrapper">
+              <div className="circle circle2">
                 <img
                   src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80"
                   alt="Jewellery"
                   className="category-img"
                 />
               </div>
-            </a>
+            </div>
             <h3 className="category-title serif">Jewellery</h3>
             <span className="category-subtitle">Fine Adornments</span>
-          </div>
+          </Link>
         </div>
       </section>
 
