@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { login } from '../store/authSlice';
+import { registerUser, createUserProfile } from '../firebase';
 
 const signupSchema = z.object({
     fullName: z.string().min(2, 'Full name must be at least 2 characters'),
@@ -34,28 +35,19 @@ export default function Signup() {
         setIsSubmitting(true);
         setServerError(null);
         try {
-            if (!auth) {
-                setServerError('Authentication is not configured. Add the Firebase environment variables and try again.');
-                return;
-            }
+            // Register user via Firebase or local store
+            const user = await registerUser(data.email.trim(), data.password, data.fullName.trim());
 
-            // 1. Create user in Firebase Auth
-            const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-            const user = userCredential.user;
-
-            // 2. Update Auth Profile
-            await updateProfile(user, { displayName: data.fullName });
-
-            // 3. Create Firestore Profile
+            // Save user profile
             await createUserProfile({
-                email: data.email,
-                fullName: data.fullName
+                email: user.email,
+                fullName: user.fullName
             });
 
-            // 4. Update Redux
-            dispatch(login({ email: data.email, fullName: data.fullName }));
+            // Update Redux & persistent session
+            dispatch(login({ email: user.email, fullName: user.fullName }));
 
-            navigate('/');
+            navigate('/account');
         } catch (error: any) {
             console.error('Signup error:', error);
             setServerError(error.message || 'Registration failed. Please try again.');

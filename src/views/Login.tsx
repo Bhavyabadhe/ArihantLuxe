@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { login } from '../store/authSlice';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { authenticateUser } from '../firebase';
 
 interface LoginFormData {
   email: string;
@@ -34,23 +34,16 @@ const Login: React.FC = () => {
       setLoading(true);
       setServerError(null);
       try {
-        if (!auth) {
-          setServerError('Authentication is not configured. Add the Firebase environment variables and try again.');
-          return;
-        }
+        const user = await authenticateUser(formData.email.trim(), formData.password);
 
-        // Sign in with Firebase Auth
-        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-        const user = userCredential.user;
-
-        // Update Redux
+        // Update Redux & persistent session
         dispatch(login({ 
-          email: user.email!, 
-          fullName: user.displayName || 'User' 
+          email: user.email, 
+          fullName: user.fullName || 'User' 
         }));
 
         const params = new URLSearchParams(window.location.search);
-        navigate(params.get('redirect') || '/');
+        navigate(params.get('redirect') || '/account');
       } catch (error: any) {
         console.error('Login error:', error);
         setServerError(error.message || 'Invalid email or password.');

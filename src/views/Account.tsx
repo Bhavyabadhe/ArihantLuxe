@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../store/store';
 import { logout } from '../store/authSlice';
+import { getUserOrders, type OrderDoc } from '../firebase';
 
 const getStatusDetails = (status: string) => {
   switch (status) {

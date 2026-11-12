@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../store/store';
 import { clearCart } from '../store/cartSlice';
+import { createOrder } from '../firebase';
 
 declare global {
   interface Window {

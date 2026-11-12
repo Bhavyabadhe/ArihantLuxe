@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { getBlogPostById, getBlogPosts, type BlogPost } from '../firebase';
 
 // Simple parser for Markdown-style blocks or HTML formatting
 function renderContent(text: string) {

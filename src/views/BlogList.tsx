@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store/store';
+import { getBlogPosts, type BlogPost } from '../firebase';
 
 const CATEGORIES = ['All', 'Style', 'Sustainability', 'Craftsmanship'];
 
