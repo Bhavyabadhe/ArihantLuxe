@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import ProductCard, { Product } from '../components/ProductCard';
 
-const DEFAULT_CATEGORIES = ['All', 'MENS', 'WOMENS', 'UNISEX'];
+const DEFAULT_CATEGORIES = ['All', 'Clothing', 'Jewellery'];
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -45,6 +45,14 @@ export default function Home() {
     return matchCat && matchSearch;
   });
 
+  const handleCategoryClick = (categoryName: string) => {
+    setActiveCategory(categoryName);
+    const shopEl = document.getElementById('shop');
+    if (shopEl) {
+      shopEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <>
       {/* Hero */}
@@ -58,6 +66,65 @@ export default function Home() {
           <a href="#shop" className="hero-btn">
             Discover Collection
           </a>
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section className="categories-section">
+        <div className="section-header" style={{ marginBottom: '2rem' }}>
+          <p>Curated</p>
+          <h2 className="cate">Categories</h2>
+        </div>
+        <div className="Categories">
+          <div
+            className="category-card"
+            onClick={() => handleCategoryClick('Clothing')}
+          >
+            <a
+              href="#shop"
+              className="category-circle-wrapper"
+              aria-label="Shop Clothing"
+              onClick={(e) => {
+                e.preventDefault();
+                handleCategoryClick('Clothing');
+              }}
+            >
+              <div className="circle">
+                <img
+                  src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop&q=80"
+                  alt="Clothing"
+                  className="category-img"
+                />
+              </div>
+            </a>
+            <h3 className="category-title serif">Clothing</h3>
+            <span className="category-subtitle">Tailored Essentials</span>
+          </div>
+
+          <div
+            className="category-card"
+            onClick={() => handleCategoryClick('Jewellery')}
+          >
+            <a
+              href="#shop"
+              className="category-circle-wrapper"
+              aria-label="Shop Jewellery"
+              onClick={(e) => {
+                e.preventDefault();
+                handleCategoryClick('Jewellery');
+              }}
+            >
+              <div className="circle2">
+                <img
+                  src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80"
+                  alt="Jewellery"
+                  className="category-img"
+                />
+              </div>
+            </a>
+            <h3 className="category-title serif">Jewellery</h3>
+            <span className="category-subtitle">Fine Adornments</span>
+          </div>
         </div>
       </section>
 
