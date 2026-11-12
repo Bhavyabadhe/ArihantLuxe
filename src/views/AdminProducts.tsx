@@ -19,10 +19,22 @@ interface ProductItem {
 
 const PRESET_CATEGORIES = ['Jewellery', 'Fashion', 'Clothing', 'Accessories'];
 const PRESET_BADGES = ['', 'New Arrival', 'Exclusive', 'Bestseller', 'Handcrafted', 'Limited Edition'];
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'arihant2026';
 
 export default function AdminProducts() {
   const navigate = useNavigate();
   const { isAuthenticated, isInitialized } = useSelector((state: RootState) => state.auth);
+
+  // Admin Security Password State
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('arihant_admin_auth') === 'true';
+    }
+    return false;
+  });
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,8 +61,29 @@ export default function AdminProducts() {
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    if (isAdminUnlocked) {
+      loadProducts();
+    }
+  }, [isAdminUnlocked]);
+
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput.trim() === ADMIN_PASSWORD) {
+      sessionStorage.setItem('arihant_admin_auth', 'true');
+      setIsAdminUnlocked(true);
+      setPasswordError('');
+      setPasswordInput('');
+    } else {
+      setPasswordError('Incorrect administrator password. Please try again.');
+    }
+  };
+
+  const handleLockDashboard = () => {
+    sessionStorage.removeItem('arihant_admin_auth');
+    setIsAdminUnlocked(false);
+    setPasswordInput('');
+    setPasswordError('');
+  };
 
   const loadProducts = async () => {
     setLoading(true);
@@ -239,6 +272,132 @@ export default function AdminProducts() {
     return matchCat && matchSearch;
   });
 
+  if (!isAdminUnlocked) {
+    return (
+      <div style={{
+        minHeight: '75vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem 1rem',
+      }}>
+        <div style={{
+          maxWidth: '440px',
+          width: '100%',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: '12px',
+          padding: '2.5rem',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.06)',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            background: 'var(--bg-alt)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.8rem',
+            margin: '0 auto 1.25rem',
+            border: '1px solid var(--border)',
+          }}>
+            🔒
+          </div>
+
+          <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--accent)', fontWeight: 600 }}>
+            Restricted Area
+          </span>
+          <h1 className="serif" style={{ fontSize: '2rem', margin: '0.35rem 0 0.5rem', color: 'var(--text)' }}>
+            Admin Verification
+          </h1>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '1.75rem' }}>
+            Please enter the administration password to access product catalog and inventory controls.
+          </p>
+
+          <form onSubmit={handleUnlock} style={{ textAlign: 'left' }}>
+            <div style={{ position: 'relative', marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '0.4rem' }}>
+                Admin Password
+              </label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                className="auth-input"
+                placeholder="Enter password..."
+                value={passwordInput}
+                onChange={(e) => {
+                  setPasswordInput(e.target.value);
+                  if (passwordError) setPasswordError('');
+                }}
+                autoFocus
+                required
+                style={{
+                  width: '100%',
+                  padding: '0.85rem 2.8rem 0.85rem 1rem',
+                  borderRadius: '4px',
+                  border: passwordError ? '1px solid #b91c1c' : '1px solid var(--border)',
+                  outline: 'none',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '29px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  opacity: 0.6,
+                }}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
+
+            {passwordError && (
+              <div style={{
+                background: '#fef2f2',
+                color: '#b91c1c',
+                padding: '0.6rem 0.8rem',
+                borderRadius: '4px',
+                fontSize: '0.8rem',
+                marginBottom: '1rem',
+                border: '1px solid #fecaca',
+              }}>
+                {passwordError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="hero-btn"
+              style={{
+                width: '100%',
+                padding: '0.9rem',
+                fontSize: '0.85rem',
+                letterSpacing: '0.15em',
+                marginBottom: '1.25rem',
+              }}
+            >
+              Unlock Dashboard
+            </button>
+
+            <div style={{ textAlign: 'center' }}>
+              <Link to="/" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textDecoration: 'underline' }}>
+                ← Return to Store
+              </Link>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="admin-page" style={{ maxWidth: '1240px', margin: '0 auto', padding: '3rem 1.5rem 6rem' }}>
       {/* Dashboard Top Header */}
@@ -256,6 +415,24 @@ export default function AdminProducts() {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={handleLockDashboard}
+            style={{
+              padding: '0.6rem 1.2rem',
+              fontSize: '0.8rem',
+              background: '#fef2f2',
+              color: '#b91c1c',
+              border: '1px solid #fecaca',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
+          >
+            🔒 Lock Admin
+          </button>
           <Link
             to="/journal/admin"
             className="hero-btn"
@@ -789,3 +966,4 @@ export default function AdminProducts() {
     </div>
   );
 }
+
