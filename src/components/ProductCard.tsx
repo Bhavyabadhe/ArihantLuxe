@@ -23,18 +23,53 @@ interface ProductCardProps {
   product: Product;
 }
 
+// Helper to reliably extract the primary image without corrupting data URLs (e.g. data:image/...;base64,...)
+function resolveMainImage(product: Product): string {
+  if (!product) return 'https://placehold.co/600x600/png';
+
+  // 1. Check images array
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    const first = product.images.find((img) => typeof img === 'string' && img.trim().length > 0);
+    if (first) {
+      const trimmed = first.trim();
+      if (trimmed.startsWith('data:image/')) return trimmed;
+      if (trimmed.includes(',') && !trimmed.startsWith('data:')) return trimmed.split(',')[0].trim();
+      return trimmed;
+    }
+  }
+
+  // 2. Check imageUrl or image
+  const raw = product.imageUrl || product.image;
+  if (Array.isArray(raw) && raw.length > 0) {
+    const first = raw.find((img) => typeof img === 'string' && img.trim().length > 0);
+    if (first) return first.trim();
+  }
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('data:image/')) return trimmed;
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const first = parsed.find((img: any) => typeof img === 'string' && img.trim().length > 0);
+          if (first) return first.trim();
+        }
+      } catch { }
+    }
+    if (trimmed.includes(',') && !trimmed.startsWith('data:')) {
+      return trimmed.split(',')[0].trim();
+    }
+    if (trimmed) return trimmed;
+  }
+
+  return 'https://placehold.co/600x600/png';
+}
+
 export default function ProductCard({ product }: ProductCardProps) {
   const dispatch = useDispatch();
 
-  const rawImage =
-    (Array.isArray(product.images) && product.images[0]) ||
-    product.imageUrl ||
-    product.image;
-  const mainImage = Array.isArray(rawImage)
-    ? rawImage[0]
-    : typeof rawImage === 'string' && rawImage.includes(',')
-      ? rawImage.split(',')[0].trim()
-      : rawImage || 'https://placehold.co/600x600/png';
+  const mainImage = resolveMainImage(product);
 
   const slug = product.slug || String(product.id);
   const numericPrice =

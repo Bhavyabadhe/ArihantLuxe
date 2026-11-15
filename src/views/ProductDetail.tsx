@@ -21,13 +21,16 @@ function extractImages(prod: any): string[] {
   // 3. String that might be comma-separated or JSON string
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
+    if (trimmed.startsWith('data:image/')) {
+      return [trimmed];
+    }
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
       try {
         const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed.filter(Boolean);
       } catch { }
     }
-    if (trimmed.includes(',')) {
+    if (trimmed.includes(',') && !trimmed.startsWith('data:')) {
       return trimmed.split(',').map((s: string) => s.trim()).filter(Boolean);
     }
     if (trimmed) {
