@@ -59,8 +59,8 @@ export default function ProductCard({ product }: ProductCardProps) {
                     name: product.name,
                     price: numericPrice,
                     image: mainImage,
-                    size: isJewellery ? undefined : product.size?.[0] || 'M',
-                    color: isJewellery ? undefined : product.color?.[0] || 'Black',
+                    size: isJewellery ? '' : product.size?.[0] || 'M',
+                    color: isJewellery ? '' : product.color?.[0] || 'Black',
                   })
                 );
               }}
