@@ -56,6 +56,18 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState('M');
   const [selectedColor, setSelectedColor] = useState('Black');
 
+  // Sync selected size/color with product options
+  useEffect(() => {
+    if (product) {
+      if (Array.isArray(product.size) && product.size.length > 0) {
+        setSelectedSize(product.size[0]);
+      }
+      if (Array.isArray(product.color) && product.color.length > 0) {
+        setSelectedColor(product.color[0]);
+      }
+    }
+  }, [product]);
+
   useEffect(() => {
     if (!slug) return;
 
@@ -218,12 +230,12 @@ export default function ProductDetail() {
           </p>
 
           {/* Size Selector (Hidden for Jewellery) */}
-          {!isJewellery && (
+          {!isJewellery && sizes.length > 0 && (
             <div style={{ marginTop: '1.5rem' }}>
               <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, display: 'block', marginBottom: '0.6rem' }}>
                 Select Size: {selectedSize}
               </span>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 {sizes.map((s: string) => (
                   <button
                     key={s}
@@ -248,12 +260,12 @@ export default function ProductDetail() {
           )}
 
           {/* Color Selector (Hidden for Jewellery) */}
-          {!isJewellery && (
+          {!isJewellery && colors.length > 0 && (
             <div style={{ marginTop: '1.5rem', marginBottom: '2rem' }}>
               <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, display: 'block', marginBottom: '0.6rem' }}>
                 Color: {selectedColor}
               </span>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 {colors.map((c: string) => (
                   <button
                     key={c}

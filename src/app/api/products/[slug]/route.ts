@@ -60,6 +60,17 @@ export async function PUT(
     const price = typeof body.price === 'number' ? body.price : parseFloat(body.price || String(existing.price));
     const stock = typeof body.stock === 'number' ? body.stock : parseInt(body.stock || String(existing.stock), 10);
 
+    const sizeList: string[] = Array.isArray(body.size)
+      ? body.size.filter(Boolean)
+      : typeof body.size === 'string' && body.size.trim()
+        ? body.size.split(',').map((s: string) => s.trim()).filter(Boolean)
+        : existing.size;
+    const colorList: string[] = Array.isArray(body.color)
+      ? body.color.filter(Boolean)
+      : typeof body.color === 'string' && body.color.trim()
+        ? body.color.split(',').map((c: string) => c.trim()).filter(Boolean)
+        : existing.color;
+
     const updated = await prisma.product.update({
       where: { id: existing.id },
       data: {
@@ -71,6 +82,8 @@ export async function PUT(
         stock,
         image,
         images: imagesList,
+        size: sizeList,
+        color: colorList,
       },
     });
 

@@ -14,12 +14,17 @@ interface ProductItem {
   images?: string[];
   badge?: string;
   stock: number;
+  size?: string[];
+  color?: string[];
   createdAt: string;
 }
 
 const PRESET_CATEGORIES = ['Jewellery', 'Fashion', 'Clothing', 'Accessories'];
 const PRESET_BADGES = ['', 'New Arrival', 'Exclusive', 'Bestseller', 'Handcrafted', 'Limited Edition'];
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'arihant2026';
+
+const AVAILABLE_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'Free Size'];
+const AVAILABLE_COLORS = ['Black', 'White', 'Beige', 'Red', 'Pink', 'Blue', 'Green', 'Yellow', 'Gold', 'Silver', 'Brown', 'Maroon', 'Navy'];
 
 // Off-screen canvas compressor to prevent multi-megabyte payloads in database
 function compressImageFile(file: File, maxDimension = 1200, quality = 0.82): Promise<string> {
@@ -90,6 +95,10 @@ export default function AdminProducts() {
   const [stock, setStock] = useState('10');
   const [badge, setBadge] = useState('');
   const [description, setDescription] = useState('');
+  const [sizes, setSizes] = useState<string[]>(['M', 'L', 'XL', 'XXL']);
+  const [customSize, setCustomSize] = useState('');
+  const [colors, setColors] = useState<string[]>(['Black', 'White', 'Beige']);
+  const [customColor, setCustomColor] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [imageUrlInput, setImageUrlInput] = useState('');
 
@@ -194,6 +203,10 @@ export default function AdminProducts() {
     setStock('10');
     setBadge('');
     setDescription('');
+    setSizes(['M', 'L', 'XL', 'XXL']);
+    setCustomSize('');
+    setColors(['Black', 'White', 'Beige']);
+    setCustomColor('');
     setImages([]);
     setImageUrlInput('');
   };
@@ -212,6 +225,10 @@ export default function AdminProducts() {
     setStock(String(p.stock));
     setBadge(p.badge || '');
     setDescription(p.description || '');
+    setSizes(Array.isArray(p.size) && p.size.length > 0 ? p.size : ['M', 'L', 'XL', 'XXL']);
+    setCustomSize('');
+    setColors(Array.isArray(p.color) && p.color.length > 0 ? p.color : ['Black', 'White', 'Beige']);
+    setCustomColor('');
 
     // Resolve images
     const prodImages = Array.isArray(p.images) && p.images.length > 0
@@ -264,6 +281,8 @@ export default function AdminProducts() {
       description: description.trim(),
       image: images[0] || null,
       images: images,
+      size: sizes,
+      color: colors,
     };
 
     try {
@@ -644,6 +663,223 @@ export default function AdminProducts() {
               />
             </div>
 
+            {/* Sizes & Colors Configuration */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                
+                {/* Available Sizes */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <label style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
+                      Available Sizes ({sizes.length})
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSizes(['XS', 'S', 'M', 'L', 'XL', 'XXL'])}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        Standard
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSizes([])}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
+                    Select sizes available for this piece. (Jewellery pieces hide sizes automatically).
+                  </p>
+
+                  {/* Size chips */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                    {AVAILABLE_SIZES.map((s) => {
+                      const isSelected = sizes.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setSizes(sizes.filter((item) => item !== s));
+                            } else {
+                              setSizes([...sizes, s]);
+                            }
+                          }}
+                          style={{
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '4px',
+                            border: isSelected ? '1px solid var(--text)' : '1px solid var(--border)',
+                            background: isSelected ? 'var(--text)' : 'var(--bg-alt)',
+                            color: isSelected ? '#fff' : 'var(--text)',
+                            fontSize: '0.75rem',
+                            fontWeight: isSelected ? 600 : 400,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {isSelected ? '✓ ' : '+ '}{s}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Custom size input */}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="text"
+                      className="auth-input"
+                      placeholder="Add custom size (e.g. 34, 36)..."
+                      value={customSize}
+                      onChange={(e) => setCustomSize(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = customSize.trim();
+                          if (val && !sizes.includes(val)) {
+                            setSizes([...sizes, val]);
+                            setCustomSize('');
+                          }
+                        }
+                      }}
+                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const val = customSize.trim();
+                        if (val && !sizes.includes(val)) {
+                          setSizes([...sizes, val]);
+                          setCustomSize('');
+                        }
+                      }}
+                      style={{
+                        padding: '0.4rem 0.85rem',
+                        background: 'var(--text)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Available Colors */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <label style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
+                      Available Colors ({colors.length})
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setColors(['Black', 'White', 'Beige'])}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        Default
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setColors([])}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.6rem' }}>
+                    Choose available colorways or add custom shades.
+                  </p>
+
+                  {/* Color chips */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                    {AVAILABLE_COLORS.map((c) => {
+                      const isSelected = colors.includes(c);
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setColors(colors.filter((item) => item !== c));
+                            } else {
+                              setColors([...colors, c]);
+                            }
+                          }}
+                          style={{
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '4px',
+                            border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                            background: isSelected ? 'var(--bg-alt)' : 'transparent',
+                            color: isSelected ? 'var(--accent)' : 'var(--text)',
+                            fontSize: '0.75rem',
+                            fontWeight: isSelected ? 600 : 400,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {isSelected ? '✓ ' : '+ '}{c}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Custom color input */}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="text"
+                      className="auth-input"
+                      placeholder="Add custom color (e.g. Lavender, Emerald)..."
+                      value={customColor}
+                      onChange={(e) => setCustomColor(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = customColor.trim();
+                          if (val && !colors.includes(val)) {
+                            setColors([...colors, val]);
+                            setCustomColor('');
+                          }
+                        }
+                      }}
+                      style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const val = customColor.trim();
+                        if (val && !colors.includes(val)) {
+                          setColors([...colors, val]);
+                          setCustomColor('');
+                        }
+                      }}
+                      style={{
+                        padding: '0.4rem 0.85rem',
+                        background: 'var(--text)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
             {/* Product Images Uploader */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
               <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '0.4rem' }}>
@@ -939,6 +1175,16 @@ export default function AdminProducts() {
                           {p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}
                         </span>
                       </div>
+                      {((Array.isArray(p.size) && p.size.length > 0) || (Array.isArray(p.color) && p.color.length > 0)) && (
+                        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.7rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                          {Array.isArray(p.size) && p.size.length > 0 && (
+                            <span>Sizes: <strong>{p.size.join(', ')}</strong></span>
+                          )}
+                          {Array.isArray(p.color) && p.color.length > 0 && (
+                            <span>Colors: <strong>{p.color.join(', ')}</strong></span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions */}
