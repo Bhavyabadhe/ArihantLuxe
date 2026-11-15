@@ -21,6 +21,45 @@ const PRESET_CATEGORIES = ['Jewellery', 'Fashion', 'Clothing', 'Accessories'];
 const PRESET_BADGES = ['', 'New Arrival', 'Exclusive', 'Bestseller', 'Handcrafted', 'Limited Edition'];
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'arihant2026';
 
+// Off-screen canvas compressor to prevent multi-megabyte payloads in database
+function compressImageFile(file: File, maxDimension = 1200, quality = 0.82): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target?.result as string;
+      if (!src) return resolve('');
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(src);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const format = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        resolve(canvas.toDataURL(format, quality));
+      };
+      img.onerror = () => resolve(src);
+      img.src = src;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function AdminProducts() {
   const navigate = useNavigate();
   const { isAuthenticated, isInitialized } = useSelector((state: RootState) => state.auth);
@@ -107,22 +146,22 @@ export default function AdminProducts() {
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  // Convert uploaded files to Data URL (Base64) for instant display & persistence
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Convert uploaded files to compressed Data URL (Base64) for snappy performance
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    Array.from(files).forEach((file) => {
-      if (!file.type.startsWith('image/')) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (result) {
-          setImages((prev) => [...prev, result]);
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) continue;
+      try {
+        const compressed = await compressImageFile(file);
+        if (compressed) {
+          setImages((prev) => [...prev, compressed]);
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      } catch (err) {
+        console.error('Upload processing failed:', err);
+      }
+    }
 
     // Reset input so same file can be picked again if needed
     if (fileInputRef.current) fileInputRef.current.value = '';

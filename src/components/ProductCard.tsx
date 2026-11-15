@@ -40,7 +40,16 @@ export default function ProductCard({ product }: ProductCardProps) {
   const numericPrice =
     typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
 
-  const isJewellery = product.category?.toLowerCase() === 'jewellery';
+  const categoryLower = (product.category || '').toLowerCase().trim();
+  const isJewellery =
+    categoryLower.includes('jewel') ||
+    categoryLower === 'jewellery' ||
+    categoryLower === 'jewelry' ||
+    categoryLower === 'ring' ||
+    categoryLower === 'necklace' ||
+    categoryLower === 'earring' ||
+    categoryLower === 'bracelet' ||
+    categoryLower === 'ornament';
 
   return (
     <div className="product-card">

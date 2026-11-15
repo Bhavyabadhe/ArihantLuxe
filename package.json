@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate && node patch-prisma-studio.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
