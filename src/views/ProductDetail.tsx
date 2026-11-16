@@ -128,9 +128,9 @@ export default function ProductDetail() {
     }
   }, [product]);
 
-  // Fetch related products from database
+  // Fetch related products from database (optimized lightweight query)
   useEffect(() => {
-    fetch('/api/products')
+    fetch('/api/products?limit=8')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {

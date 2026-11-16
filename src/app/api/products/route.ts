@@ -1,13 +1,40 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// GET /api/products — Fetch all products from Prisma PostgreSQL database
-export async function GET() {
+// GET /api/products — Fetch products with bandwidth optimization and edge caching
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const includeAllImages = searchParams.get('includeAllImages') === 'true';
+    const limit = parseInt(searchParams.get('limit') || '0', 10);
+
     const products = await prisma.product.findMany({
       orderBy: { createdAt: 'desc' },
+      ...(limit > 0 ? { take: limit } : {}),
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        price: true,
+        category: true,
+        description: true,
+        image: true,
+        badge: true,
+        stock: true,
+        size: true,
+        color: true,
+        createdAt: true,
+        // Omit the heavy multi-megabyte images array from general catalog listings
+        ...(includeAllImages ? { images: true } : {}),
+      },
     });
-    return NextResponse.json(products);
+
+    return NextResponse.json(products, {
+      headers: {
+        // Cache at Vercel Edge for 60s, stale-while-revalidate for 5 minutes
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error) {
     console.error('Failed to fetch products from Prisma:', error);
     return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
