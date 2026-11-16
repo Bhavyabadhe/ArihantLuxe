@@ -5,8 +5,8 @@ import type { RootState } from '../store/store';
 import { clearCart } from '../store/cartSlice';
 import { createOrder } from '../firebase';
 
-const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || 'arihantluxe@upi';
-const UPI_NAME = process.env.NEXT_PUBLIC_UPI_NAME || 'Arihant Luxe';
+const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || 'arihanttest@nyes';
+const UPI_NAME = process.env.NEXT_PUBLIC_UPI_NAME || 'Arihant Jain';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -391,37 +391,62 @@ export default function Checkout() {
             {/* Total Amount Badge */}
             <div style={{
               display: 'inline-block',
-              padding: '0.5rem 1.5rem',
-              backgroundColor: 'var(--bg-alt)',
+              padding: '0.6rem 1.6rem',
+              backgroundColor: '#faf8f5',
               borderRadius: '30px',
               marginBottom: '1.25rem',
               border: '1px solid var(--border)',
             }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: '0.4rem' }}>Amount to Pay:</span>
-              <strong style={{ fontSize: '1.2rem', color: 'var(--text)' }}>Rs.{total.toFixed(2)}</strong>
+              <strong style={{ fontSize: '1.25rem', color: 'var(--accent)' }}>Rs.{total.toFixed(2)}</strong>
             </div>
 
-            {/* QR Code Container */}
+            {/* Authentic Navi UPI QR Card Container */}
             <div style={{
               background: '#ffffff',
-              padding: '1rem',
-              borderRadius: '8px',
-              display: 'inline-block',
-              border: '1px solid var(--border)',
-              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.05)',
-              marginBottom: '1rem',
+              padding: '0.75rem',
+              borderRadius: '16px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.08)',
+              marginBottom: '1.25rem',
+              maxWidth: '300px',
+              margin: '0 auto 1.25rem auto',
             }}>
               <img
-                src={qrCodeUrl}
-                alt="UPI Payment QR Code"
+                src="/payment-qr.jpg"
+                alt="Navi UPI Payment QR Code - Arihant Jain"
                 style={{
-                  width: '210px',
-                  height: '210px',
+                  width: '100%',
+                  height: 'auto',
                   display: 'block',
                   margin: '0 auto',
+                  borderRadius: '10px',
                 }}
               />
             </div>
+
+            {/* Mobile Pay Directly Button */}
+            <a
+              href={upiPayUrl}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '0.75rem 1rem',
+                backgroundColor: 'var(--accent)',
+                color: '#ffffff',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                marginBottom: '1rem',
+                textAlign: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              }}
+            >
+              📱 Tap to Pay on UPI App (Mobile)
+            </a>
 
             {/* UPI ID Row */}
             <div style={{
@@ -429,16 +454,16 @@ export default function Checkout() {
               alignItems: 'center',
               justifyContent: 'space-between',
               background: 'var(--bg-alt)',
-              padding: '0.6rem 0.9rem',
+              padding: '0.65rem 0.9rem',
               borderRadius: '6px',
               marginBottom: '1.25rem',
               border: '1px dashed var(--border)',
             }}>
               <div style={{ textAlign: 'left' }}>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  UPI ID
+                  Payee: <strong>{UPI_NAME}</strong>
                 </span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>
+                <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text)' }}>
                   {UPI_ID}
                 </span>
               </div>
