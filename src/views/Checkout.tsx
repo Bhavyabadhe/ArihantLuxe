@@ -5,7 +5,7 @@ import type { RootState } from '../store/store';
 import { clearCart } from '../store/cartSlice';
 import { createOrder } from '../firebase';
 
-const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || 'arihanttest@nyes';
+const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || 'arihantluxe@nyes';
 const UPI_NAME = process.env.NEXT_PUBLIC_UPI_NAME || 'Arihant Jain';
 
 export default function Checkout() {
@@ -47,9 +47,15 @@ export default function Checkout() {
   const shipping = subtotal < 500 ? 70 : 0;
   const total = subtotal + shipping;
 
-  // Generate standard UPI Payment URL
+  // Generate standard UPI Payment URL & app-specific intents
   const upiPayUrl = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Arihant Luxe Order')}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(upiPayUrl)}`;
+  const gpayUrl = `tez://upi/pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Arihant Luxe Order')}`;
+  const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Arihant Luxe Order')}`;
+  const paytmUrl = `paytmmp://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Arihant Luxe Order')}`;
+
+  const openUpiApp = (url: string) => {
+    window.location.href = url;
+  };
 
   const validateShipping = (): boolean => {
     if (!email.trim() || !fullName.trim() || !address.trim() || !city.trim() || !country.trim()) {
@@ -425,28 +431,86 @@ export default function Checkout() {
               />
             </div>
 
-            {/* Mobile Pay Directly Button */}
-            <a
-              href={upiPayUrl}
-              style={{
-                display: 'block',
-                width: '100%',
-                padding: '0.75rem 1rem',
-                backgroundColor: 'var(--accent)',
-                color: '#ffffff',
-                textDecoration: 'none',
-                borderRadius: '6px',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                marginBottom: '1rem',
-                textAlign: 'center',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              }}
-            >
-              📱 Tap to Pay on UPI App (Mobile)
-            </a>
+            {/* Mobile One-Tap UPI Action Buttons */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <button
+                type="button"
+                onClick={() => openUpiApp(upiPayUrl)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  width: '100%',
+                  padding: '0.85rem 1rem',
+                  backgroundColor: 'var(--text)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  marginBottom: '0.5rem',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                }}
+              >
+                <span>📱</span> Tap to Pay (Any UPI App)
+              </button>
+
+              {/* Direct App Launchers */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem' }}>
+                <button
+                  type="button"
+                  onClick={() => openUpiApp(gpayUrl)}
+                  style={{
+                    padding: '0.55rem 0.25rem',
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '4px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: '#3c4043',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Pay via GPay
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openUpiApp(phonepeUrl)}
+                  style={{
+                    padding: '0.55rem 0.25rem',
+                    background: '#5f259f',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  PhonePe
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openUpiApp(paytmUrl)}
+                  style={{
+                    padding: '0.55rem 0.25rem',
+                    background: '#ffffff',
+                    border: '1px solid #00b9f5',
+                    borderRadius: '4px',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    color: '#002e6e',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Paytm
+                </button>
+              </div>
+            </div>
 
             {/* UPI ID Row */}
             <div style={{
