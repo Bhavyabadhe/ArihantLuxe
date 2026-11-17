@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../store/store';
 import { clearCart } from '../store/cartSlice';
 import { createOrder } from '../firebase';
+import { YouPiCheckoutModal } from '../components/YouPiCheckoutModal';
 
 const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || 'arihantluxe@nyes';
 const UPI_NAME = process.env.NEXT_PUBLIC_UPI_NAME || 'Arihant Jain';
@@ -22,11 +23,10 @@ export default function Checkout() {
   const [country] = useState('India');
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cod'>('upi');
 
-  // QR Modal & UTR state
+  // YouPI-PG Gateway & UTR state
   const [showQrModal, setShowQrModal] = useState(false);
-  const [utrNumber, setUtrNumber] = useState('');
+  const [orderRef, setOrderRef] = useState('');
   const [utrError, setUtrError] = useState('');
-  const [copiedUpi, setCopiedUpi] = useState(false);
   const [submittingUtr, setSubmittingUtr] = useState(false);
 
   // Notification state
@@ -46,16 +46,6 @@ export default function Checkout() {
   const subtotal = useMemo(() => items.reduce((sum, i) => sum + i.price * i.quantity, 0), [items]);
   const shipping = subtotal < 500 ? 70 : 0;
   const total = subtotal + shipping;
-
-  // Generate standard UPI Payment URL & app-specific intents
-  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Arihant Luxe Order')}`;
-  const gpayUrl = `tez://upi/pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Arihant Luxe Order')}`;
-  const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Arihant Luxe Order')}`;
-  const paytmUrl = `paytmmp://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${total.toFixed(2)}&cu=INR&tn=${encodeURIComponent('Arihant Luxe Order')}`;
-
-  const openUpiApp = (url: string) => {
-    window.location.href = url;
-  };
 
   const validateShipping = (): boolean => {
     if (!email.trim() || !fullName.trim() || !address.trim() || !city.trim() || !country.trim()) {
@@ -108,23 +98,14 @@ export default function Checkout() {
       return;
     }
 
-    // For UPI, open the QR & UTR input modal
+    // For YouPI UPI, generate a unique order reference and open YouPI modal
+    const generatedRef = 'ALX-' + Date.now().toString(36).toUpperCase();
+    setOrderRef(generatedRef);
     setUtrError('');
     setShowQrModal(true);
   };
 
-  const handleUtrSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanUtr = utrNumber.trim();
-    if (!cleanUtr) {
-      setUtrError('Please enter the 12-digit UTR / Reference Number after completing payment.');
-      return;
-    }
-    if (cleanUtr.length < 6) {
-      setUtrError('Please enter a valid UTR / Transaction Reference number.');
-      return;
-    }
-
+  const handleUtrSubmit = async (cleanUtr: string) => {
     setSubmittingUtr(true);
     setUtrError('');
 
@@ -138,31 +119,26 @@ export default function Checkout() {
         total: total,
         shippingAddress: { email: email.trim(), fullName: fullName.trim(), address: address.trim(), city: city.trim(), country },
         status: 'paid_pending_verification',
-        paymentMethod: 'upi_qr',
+        paymentMethod: 'youpi_upi',
         paymentId: cleanUtr,
+        orderReference: orderRef,
         createdAt: Date.now(),
       });
 
       setShowQrModal(false);
       dispatch(clearCart());
       setNotification({
-        title: 'Payment Submitted!',
+        title: 'Payment Submitted via YouPI!',
         message: `Your order #${orderId.slice(0, 8).toUpperCase()} has been received with UTR Ref: ${cleanUtr}. We will verify your transaction and update your order tracking shortly.`,
         type: 'success',
         onClose: () => navigate('/account'),
       });
     } catch (err: any) {
-      console.error('UPI Order error:', err);
+      console.error('YouPI Order error:', err);
       setUtrError('Failed to record your order. Please try submitting again.');
     } finally {
       setSubmittingUtr(false);
     }
-  };
-
-  const copyUpiId = () => {
-    navigator.clipboard.writeText(UPI_ID);
-    setCopiedUpi(true);
-    setTimeout(() => setCopiedUpi(false), 2000);
   };
 
   if (items.length === 0 && !notification) {
@@ -245,9 +221,15 @@ export default function Checkout() {
 
             {/* Payment Method Selector */}
             <div style={{ marginTop: '2.5rem', borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
-              <h3 className="serif" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Payment Method</h3>
-              <div style={{ marginTop: '1.25rem' }}>
-                {/* UPI QR Payment */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <h3 className="serif" style={{ fontSize: '1.5rem', margin: 0 }}>Payment Method</h3>
+                <span style={{ fontSize: '0.68rem', background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', padding: '3px 8px', borderRadius: '4px', fontWeight: 600, letterSpacing: '0.04em' }}>
+                  ✓ 0% Platform Fee
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {/* YouPI Direct UPI Payment */}
                 <div
                   className={`payment-method-card ${paymentMethod === 'upi' ? 'selected' : ''}`}
                   onClick={() => setPaymentMethod('upi')}
@@ -261,7 +243,65 @@ export default function Checkout() {
                     boxShadow: paymentMethod === 'upi' ? 'var(--shadow-soft)' : 'none',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '50%',
+                        border: '2px solid var(--accent)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: paymentMethod === 'upi' ? 'var(--accent)' : 'transparent',
+                      }}>
+                        {paymentMethod === 'upi' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />}
+                      </div>
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.05em' }}>
+                        YouPI Direct UPI (0% Convenience Fee)
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>INSTANT</span>
+                  </div>
+
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '2rem', marginBottom: '0.5rem' }}>
+                    Dynamic QR Code & Mobile 1-Tap Pay via Google Pay, PhonePe, Paytm, CRED or any UPI App.
+                  </p>
+
+                  <div style={{ display: 'flex', gap: '0.35rem', marginLeft: '2rem', flexWrap: 'wrap' }}>
+                    {['Google Pay', 'PhonePe', 'Paytm', 'CRED', 'BHIM', 'Navi'].map((app) => (
+                      <span
+                        key={app}
+                        style={{
+                          fontSize: '0.66rem',
+                          background: '#f1f5f9',
+                          color: '#475569',
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {app}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Cash on Delivery (COD) */}
+                <div
+                  className={`payment-method-card ${paymentMethod === 'cod' ? 'selected' : ''}`}
+                  onClick={() => setPaymentMethod('cod')}
+                  style={{
+                    border: paymentMethod === 'cod' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                    padding: '1.25rem',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    transition: 'var(--transition)',
+                    backgroundColor: paymentMethod === 'cod' ? '#fff' : 'transparent',
+                    boxShadow: paymentMethod === 'cod' ? 'var(--shadow-soft)' : 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
                     <div style={{
                       width: '18px',
                       height: '18px',
@@ -270,14 +310,16 @@ export default function Checkout() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      background: paymentMethod === 'upi' ? 'var(--accent)' : 'transparent',
+                      background: paymentMethod === 'cod' ? 'var(--accent)' : 'transparent',
                     }}>
-                      {paymentMethod === 'upi' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />}
+                      {paymentMethod === 'cod' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />}
                     </div>
-                    <span style={{ fontWeight: 600, fontSize: '0.8rem', letterSpacing: '0.1em' }}>UPI / QR CODE</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.05em' }}>
+                      Cash on Delivery (COD)
+                    </span>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Scan QR code via GPay, PhonePe, Paytm or BHIM & enter UTR.
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '2rem' }}>
+                    Pay with cash or UPI to courier upon package delivery.
                   </p>
                 </div>
               </div>
@@ -294,7 +336,7 @@ export default function Checkout() {
                 disabled={isLoading}
                 onClick={handleCheckoutSubmit}
               >
-                {isLoading ? 'Processing...' : paymentMethod === 'cod' ? 'Place Order (COD)' : `Pay Rs.${total.toFixed(2)} with UPI QR`}
+                {isLoading ? 'Processing...' : paymentMethod === 'cod' ? 'Place Order (COD)' : `Pay Rs.${total.toFixed(2)} with YouPI`}
               </button>
             </div>
           </div>
@@ -336,283 +378,20 @@ export default function Checkout() {
         </section>
       </div>
 
-      {/* UPI QR & UTR Popup Modal */}
-      {showQrModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.65)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '1rem',
-          animation: 'fadeIn 0.25s ease-out',
-        }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            maxWidth: '460px',
-            width: '100%',
-            maxHeight: '92vh',
-            overflowY: 'auto',
-            padding: '2rem',
-            position: 'relative',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.3)',
-            border: '1px solid var(--border)',
-            textAlign: 'center',
-          }}>
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={() => setShowQrModal(false)}
-              style={{
-                position: 'absolute',
-                top: '1.25rem',
-                right: '1.25rem',
-                background: 'transparent',
-                border: 'none',
-                fontSize: '1.25rem',
-                cursor: 'pointer',
-                color: 'var(--text-muted)',
-                lineHeight: 1,
-              }}
-              aria-label="Close modal"
-            >
-              ✕
-            </button>
-
-            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--accent)', fontWeight: 600 }}>
-              Scan & Pay
-            </span>
-            <h2 className="serif" style={{ fontSize: '1.85rem', margin: '0.35rem 0 0.25rem', color: 'var(--text)' }}>
-              UPI Payment
-            </h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-              Scan the QR code with any UPI app to pay
-            </p>
-
-            {/* Total Amount Badge */}
-            <div style={{
-              display: 'inline-block',
-              padding: '0.6rem 1.6rem',
-              backgroundColor: '#faf8f5',
-              borderRadius: '30px',
-              marginBottom: '1.25rem',
-              border: '1px solid var(--border)',
-            }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: '0.4rem' }}>Amount to Pay:</span>
-              <strong style={{ fontSize: '1.25rem', color: 'var(--accent)' }}>Rs.{total.toFixed(2)}</strong>
-            </div>
-
-            {/* Authentic Navi UPI QR Card Container */}
-            <div style={{
-              background: '#ffffff',
-              padding: '0.75rem',
-              borderRadius: '16px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.08)',
-              marginBottom: '1.25rem',
-              maxWidth: '300px',
-              margin: '0 auto 1.25rem auto',
-            }}>
-              <img
-                src="/payment-qr.jpg"
-                alt="Navi UPI Payment QR Code - Arihant Jain"
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  display: 'block',
-                  margin: '0 auto',
-                  borderRadius: '10px',
-                }}
-              />
-            </div>
-
-            {/* Mobile One-Tap UPI Action Buttons */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <button
-                type="button"
-                onClick={() => openUpiApp(upiPayUrl)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  width: '100%',
-                  padding: '0.85rem 1rem',
-                  backgroundColor: 'var(--text)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  marginBottom: '0.5rem',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-                }}
-              >
-                <span>📱</span> Tap to Pay (Any UPI App)
-              </button>
-
-              {/* Direct App Launchers */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem' }}>
-                <button
-                  type="button"
-                  onClick={() => openUpiApp(gpayUrl)}
-                  style={{
-                    padding: '0.55rem 0.25rem',
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '4px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    color: '#3c4043',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Pay via GPay
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openUpiApp(phonepeUrl)}
-                  style={{
-                    padding: '0.55rem 0.25rem',
-                    background: '#5f259f',
-                    border: 'none',
-                    borderRadius: '4px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    cursor: 'pointer',
-                  }}
-                >
-                  PhonePe
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openUpiApp(paytmUrl)}
-                  style={{
-                    padding: '0.55rem 0.25rem',
-                    background: '#ffffff',
-                    border: '1px solid #00b9f5',
-                    borderRadius: '4px',
-                    fontSize: '0.72rem',
-                    fontWeight: 800,
-                    color: '#002e6e',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Paytm
-                </button>
-              </div>
-            </div>
-
-            {/* UPI ID Row */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              background: 'var(--bg-alt)',
-              padding: '0.65rem 0.9rem',
-              borderRadius: '6px',
-              marginBottom: '1.25rem',
-              border: '1px dashed var(--border)',
-            }}>
-              <div style={{ textAlign: 'left' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Payee: <strong>{UPI_NAME}</strong>
-                </span>
-                <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text)' }}>
-                  {UPI_ID}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={copyUpiId}
-                style={{
-                  padding: '0.35rem 0.8rem',
-                  fontSize: '0.75rem',
-                  letterSpacing: '0.05em',
-                  background: copiedUpi ? '#166534' : 'var(--text)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {copiedUpi ? '✓ Copied' : 'Copy'}
-              </button>
-            </div>
-
-            {/* UTR Input Form */}
-            <form onSubmit={handleUtrSubmit} style={{ textAlign: 'left', marginTop: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: '0.4rem' }}>
-                Enter 12-Digit UTR / Ref Number <span style={{ color: '#b91c1c' }}>*</span>
-              </label>
-              <input
-                type="text"
-                className="auth-input"
-                value={utrNumber}
-                onChange={(e) => setUtrNumber(e.target.value)}
-                placeholder="e.g. 412345678901"
-                style={{
-                  width: '100%',
-                  padding: '0.8rem 1rem',
-                  fontSize: '0.9rem',
-                  borderRadius: '4px',
-                  border: utrError ? '1px solid #b91c1c' : '1px solid var(--border)',
-                  marginBottom: '0.5rem',
-                  outline: 'none',
-                }}
-              />
-
-              {utrError && (
-                <p style={{ color: '#b91c1c', fontSize: '0.78rem', marginBottom: '0.75rem', lineHeight: '1.4' }}>
-                  {utrError}
-                </p>
-              )}
-
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4', marginBottom: '1.25rem' }}>
-                Tip: You can find the 12-digit UTR / UPI Reference ID under transaction details in your GPay, PhonePe, or Paytm app.
-              </p>
-
-              <button
-                type="submit"
-                disabled={submittingUtr}
-                style={{
-                  width: '100%',
-                  backgroundColor: 'var(--text)',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '1rem',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.15em',
-                  cursor: submittingUtr ? 'not-allowed' : 'pointer',
-                  borderRadius: '4px',
-                  transition: 'background-color 0.2s ease',
-                  opacity: submittingUtr ? 0.7 : 1,
-                }}
-                onMouseEnter={(e) => {
-                  if (!submittingUtr) e.currentTarget.style.backgroundColor = 'var(--accent)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!submittingUtr) e.currentTarget.style.backgroundColor = 'var(--text)';
-                }}
-              >
-                {submittingUtr ? 'Verifying & Recording...' : 'Confirm Order with UTR'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* YouPI Open-Source Gateway Checkout Modal */}
+      <YouPiCheckoutModal
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
+        amount={total}
+        orderRef={orderRef}
+        upiId={UPI_ID}
+        upiName={UPI_NAME}
+        customerName={fullName}
+        customerEmail={email}
+        onSubmitUtr={handleUtrSubmit}
+        isSubmitting={submittingUtr}
+        errorMessage={utrError}
+      />
 
       {/* Custom Notification Modal */}
       {notification && (

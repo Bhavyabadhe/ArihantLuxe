@@ -59,6 +59,7 @@ export interface OrderDoc {
   paymentMethod: 'online' | 'cod' | 'upi_qr' | string;
   createdAt: number;
   paymentId?: string;
+  orderReference?: string;
 }
 
 // Local User Store Fallback (in case Firebase Email/Password is not enabled in Firebase Console)
