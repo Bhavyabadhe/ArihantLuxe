@@ -77,7 +77,7 @@ export default function Home() {
             <div className="category-circle-wrapper">
               <div className="circle">
                 <img
-                  src="/hero.png"
+                  src="/zero.png"
                   alt="Fashion"
                   className="category-img"
                 />
