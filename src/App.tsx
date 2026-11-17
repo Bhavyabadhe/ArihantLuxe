@@ -55,6 +55,7 @@ function AppLayout() {
           <Route path="/clothing" element={<Fashion />} />
           <Route path="/jewellery" element={<Jewellery />} />
           <Route path="/jewelry" element={<Jewellery />} />
+          <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />

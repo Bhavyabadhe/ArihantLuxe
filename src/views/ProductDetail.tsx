@@ -8,38 +8,56 @@ import ProductCard, { Product } from '../components/ProductCard';
 function extractImages(prod: any): string[] {
   if (!prod) return ['https://placehold.co/600x600/png'];
 
-  // 1. Prisma `images` column (String[])
-  if (Array.isArray(prod.images) && prod.images.length > 0) {
-    return prod.images.filter(Boolean);
+  const results: string[] = [];
+
+  const parseValue = (val: any) => {
+    if (!val) return;
+    if (Array.isArray(val)) {
+      val.forEach((item) => {
+        if (typeof item === 'string' && item.trim()) {
+          results.push(item.trim());
+        }
+      });
+      return;
+    }
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      if (!trimmed) return;
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((item) => {
+              if (typeof item === 'string' && item.trim()) {
+                results.push(item.trim());
+              }
+            });
+            return;
+          }
+        } catch { }
+      }
+      if (trimmed.includes(',') && !trimmed.startsWith('data:')) {
+        trimmed.split(',').forEach((item) => {
+          if (item.trim()) results.push(item.trim());
+        });
+        return;
+      }
+      results.push(trimmed);
+    }
+  };
+
+  // Check prod.images first
+  parseValue(prod.images);
+
+  // If prod.images didn't have entries, also check prod.image and prod.imageUrl
+  if (results.length === 0) {
+    parseValue(prod.image);
+    parseValue(prod.imageUrl);
   }
 
-  // 2. Array in `image` or `imageUrl`
-  const raw = prod.image || prod.imageUrl;
-  if (Array.isArray(raw) && raw.length > 0) {
-    return raw.filter(Boolean);
-  }
-
-  // 3. String that might be comma-separated or JSON string
-  if (typeof raw === 'string') {
-    const trimmed = raw.trim();
-    if (trimmed.startsWith('data:image/')) {
-      return [trimmed];
-    }
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed.filter(Boolean);
-      } catch { }
-    }
-    if (trimmed.includes(',') && !trimmed.startsWith('data:')) {
-      return trimmed.split(',').map((s: string) => s.trim()).filter(Boolean);
-    }
-    if (trimmed) {
-      return [trimmed];
-    }
-  }
-
-  return ['https://placehold.co/600x600/png'];
+  // De-duplicate while preserving order
+  const unique = Array.from(new Set(results));
+  return unique.length > 0 ? unique : ['https://placehold.co/600x600/png'];
 }
 
 interface CustomerReview {
@@ -55,7 +73,8 @@ interface CustomerReview {
 }
 
 export default function ProductDetail() {
-  const { slug } = useParams();
+  const params = useParams<{ id?: string; slug?: string }>();
+  const slug = params.slug || params.id;
   const location = useLocation();
   const dispatch = useDispatch();
 
@@ -69,6 +88,11 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [showSizeChart, setShowSizeChart] = useState(false);
+
+  // Reset active image index whenever the viewed product changes
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [slug]);
 
   // Sync selected size and color whenever product changes
   useEffect(() => {
@@ -97,7 +121,7 @@ export default function ProductDetail() {
   const [reviewSuccess, setReviewSuccess] = useState(false);
   const [helpfulClicked, setHelpfulClicked] = useState<{ [key: string]: boolean }>({});
 
-  // Background fetch product data
+  // Fetch full product data (including all gallery images) from database
   useEffect(() => {
     if (!slug) return;
 
@@ -125,7 +149,7 @@ export default function ProductDetail() {
     return () => {
       isMounted = false;
     };
-  }, [slug, passedProduct]);
+  }, [slug]);
 
   // Sync selected size/color when product loads
   useEffect(() => {
@@ -379,6 +403,90 @@ export default function ProductDetail() {
               alt={product.name}
               style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', transition: 'all 0.3s ease' }}
             />
+
+            {/* Left / Right Carousel Controls if Multiple Images */}
+            {allImages.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1))}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    color: '#0f172a',
+                    border: '1px solid rgba(0, 0, 0, 0.1)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.25rem',
+                    fontWeight: 300,
+                    lineHeight: 1,
+                    zIndex: 2,
+                    transition: 'all 0.2s ease',
+                  }}
+                  title="Previous image"
+                >
+                  &#8249;
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0))}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    color: '#0f172a',
+                    border: '1px solid rgba(0, 0, 0, 0.1)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.25rem',
+                    fontWeight: 300,
+                    lineHeight: 1,
+                    zIndex: 2,
+                    transition: 'all 0.2s ease',
+                  }}
+                  title="Next image"
+                >
+                  &#8250;
+                </button>
+
+                {/* Image Counter Badge */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '12px',
+                    right: '12px',
+                    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                    color: '#ffffff',
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.06em',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 2,
+                  }}
+                >
+                  {activeImageIndex + 1} / {allImages.length}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Thumbnails Strip */}

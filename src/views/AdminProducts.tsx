@@ -194,7 +194,7 @@ export default function AdminProducts() {
   const loadProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch('/api/products?includeAllImages=true');
       if (!res.ok) throw new Error('Failed to load products');
       const data = await res.json();
       if (Array.isArray(data)) {
