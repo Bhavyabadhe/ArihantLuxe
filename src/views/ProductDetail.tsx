@@ -68,6 +68,7 @@ export default function ProductDetail() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState('M');
   const [selectedColor, setSelectedColor] = useState('Black');
+  const [showSizeChart, setShowSizeChart] = useState(false);
 
   // Related products from collection
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -140,7 +141,7 @@ export default function ProductDetail() {
           setRelatedProducts(others.slice(0, 4));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [slug, product?.id]);
 
   // Category classification
@@ -454,7 +455,10 @@ export default function ProductDetail() {
                 <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600 }}>
                   Select Size: {selectedSize}
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer' }}>
+                <span
+                  onClick={() => setShowSizeChart(true)}
+                  style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer' }}
+                >
                   Size Chart
                 </span>
               </div>
@@ -1283,6 +1287,112 @@ export default function ProductDetail() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Size Chart Lightbox Modal */}
+      {showSizeChart && (
+        <div
+          onClick={() => setShowSizeChart(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '1.25rem',
+            animation: 'fadeIn 0.2s ease-out',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '680px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.35)',
+              border: '1px solid #e2e8f0',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '1.75rem',
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--accent)', fontWeight: 600 }}>
+                  Fit & Sizing Guide
+                </span>
+                <h3 className="serif" style={{ fontSize: '1.6rem', margin: '0.2rem 0 0 0', color: 'var(--text)' }}>
+                  Size Chart
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSizeChart(false)}
+                style={{
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  fontSize: '1.1rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#475569',
+                  transition: 'all 0.15s ease',
+                }}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Size Chart Image */}
+            <div
+              style={{
+                borderRadius: '12px',
+                overflow: 'hidden',
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <img
+                src="/sizechart.jpeg"
+                alt="Garment Sizing Chart"
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '65vh',
+                  objectFit: 'contain',
+                  display: 'block',
+                }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/pics/sizechart.jpeg';
+                }}
+              />
+            </div>
+
+            {/* Footer Tip */}
+            <div style={{ marginTop: '1.25rem', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+                💡 All measurements are in inches. If you are between sizes, we recommend sizing up for traditional silhouettes.
+              </p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
