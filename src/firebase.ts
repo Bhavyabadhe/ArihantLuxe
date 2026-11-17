@@ -156,27 +156,89 @@ export async function createUserProfile(profile: { email: string; fullName: stri
 
 export async function getUserOrders(email: string): Promise<(OrderDoc & { id: string })[]> {
   try {
+    const res = await fetch(`/api/orders?email=${encodeURIComponent(email.trim())}`);
+    if (res.ok) {
+      const dbOrders = await res.json();
+      if (Array.isArray(dbOrders)) {
+        return dbOrders.map((o: any) => ({
+          id: o.id,
+          userEmail: o.userEmail,
+          userFullName: o.userFullName,
+          items: typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []),
+          subtotal: Number(o.subtotal) || 0,
+          shippingFee: Number(o.shippingFee) || 0,
+          total: Number(o.total) || 0,
+          shippingAddress: typeof o.shippingAddress === 'string' ? JSON.parse(o.shippingAddress) : (o.shippingAddress || {}),
+          status: o.status,
+          paymentMethod: o.paymentMethod,
+          paymentId: o.paymentId,
+          createdAt: new Date(o.createdAt).getTime(),
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch orders from database, checking local cache:', err);
+  }
+
+  // Fallback to local storage
+  try {
     const allOrders: (OrderDoc & { id: string })[] = JSON.parse(localStorage.getItem('arihant_orders') || '[]');
-    return allOrders.filter(o => o.userEmail.toLowerCase() === email.toLowerCase());
+    return allOrders.filter(o => o.userEmail?.toLowerCase() === email.toLowerCase());
   } catch {
     return [];
   }
 }
 
 export async function createOrder(orderData: Omit<OrderDoc, 'id'>): Promise<string> {
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData),
+    });
+
+    if (res.ok) {
+      const saved = await res.json();
+      const generatedId = saved.id;
+
+      // Sync to local cache as well
+      try {
+        const allOrders: (OrderDoc & { id: string })[] = JSON.parse(localStorage.getItem('arihant_orders') || '[]');
+        allOrders.unshift({ ...orderData, id: generatedId });
+        localStorage.setItem('arihant_orders', JSON.stringify(allOrders));
+      } catch {}
+
+      return generatedId;
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      console.error('API rejected order creation:', errData);
+    }
+  } catch (err) {
+    console.error('Failed to create order via database API, falling back to local cache:', err);
+  }
+
+  // Offline fallback
   const id = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
   const newOrder: OrderDoc & { id: string } = { ...orderData, id };
   try {
     const allOrders: (OrderDoc & { id: string })[] = JSON.parse(localStorage.getItem('arihant_orders') || '[]');
     allOrders.unshift(newOrder);
     localStorage.setItem('arihant_orders', JSON.stringify(allOrders));
-  } catch (err) {
-    console.error('Failed to save order to storage:', err);
-  }
+  } catch {}
   return id;
 }
 
 export async function updateOrderStatus(orderId: string, updates: Partial<OrderDoc>): Promise<void> {
+  try {
+    await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+  } catch (err) {
+    console.error('Failed to update order via database API:', err);
+  }
+
   try {
     const allOrders: (OrderDoc & { id: string })[] = JSON.parse(localStorage.getItem('arihant_orders') || '[]');
     const index = allOrders.findIndex(o => o.id === orderId);
@@ -185,7 +247,7 @@ export async function updateOrderStatus(orderId: string, updates: Partial<OrderD
       localStorage.setItem('arihant_orders', JSON.stringify(allOrders));
     }
   } catch (err) {
-    console.error('Failed to update order status:', err);
+    console.error('Failed to update order in local storage:', err);
   }
 }
 

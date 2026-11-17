@@ -86,6 +86,11 @@ export default function AdminProducts() {
   const [search, setSearch] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('All');
 
+  // Navigation tab: Products vs Orders
+  const [adminTab, setAdminTab] = useState<'products' | 'orders'>('products');
+  const [dbOrders, setDbOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
   // Form State
   const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState('');
@@ -111,8 +116,61 @@ export default function AdminProducts() {
   useEffect(() => {
     if (isAdminUnlocked) {
       loadProducts();
+      fetchAllOrders();
     }
   }, [isAdminUnlocked]);
+
+  const fetchAllOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const res = await fetch('/api/orders');
+      if (res.ok) {
+        const data = await res.json();
+        setDbOrders(Array.isArray(data) ? data : []);
+      }
+    } catch (err: any) {
+      console.error('Error fetching orders from database:', err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        showFeedback(`Order status updated to ${newStatus}`, 'success');
+        setDbOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+        );
+      } else {
+        throw new Error('Update failed');
+      }
+    } catch (err) {
+      showFeedback('Failed to update order status', 'error');
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm(`Are you sure you want to delete this order?`)) return;
+    try {
+      const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        showFeedback('Order deleted successfully', 'success');
+        setDbOrders((prev) => prev.filter((o) => o.id !== orderId));
+      } else {
+        throw new Error('Delete failed');
+      }
+    } catch (err) {
+      showFeedback('Failed to delete order', 'error');
+    }
+  };
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
@@ -527,8 +585,51 @@ export default function AdminProducts() {
         </div>
       )}
 
-      {/* Grid Layout: Upload Form (Left) & Existing Inventory (Right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(340px, 480px) 1fr', gap: '3rem', alignItems: 'start' }}>
+      {/* Navigation Tabs: Catalog vs Orders */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+        <button
+          type="button"
+          onClick={() => setAdminTab('products')}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            fontSize: '1rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            padding: '0.5rem 1rem',
+            borderBottom: adminTab === 'products' ? '3px solid var(--accent)' : '3px solid transparent',
+            color: adminTab === 'products' ? 'var(--text)' : 'var(--text-muted)',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          🏷️ Catalog Inventory ({products.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setAdminTab('orders');
+            fetchAllOrders();
+          }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            fontSize: '1rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            padding: '0.5rem 1rem',
+            borderBottom: adminTab === 'orders' ? '3px solid var(--accent)' : '3px solid transparent',
+            color: adminTab === 'orders' ? 'var(--text)' : 'var(--text-muted)',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          📦 Store Orders ({dbOrders.length})
+        </button>
+      </div>
+
+      {adminTab === 'products' ? (
+        /* Grid Layout: Upload Form (Left) & Existing Inventory (Right) */
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(340px, 480px) 1fr', gap: '3rem', alignItems: 'start' }}>
         
         {/* Upload / Edit Form */}
         <div ref={formRef} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '2rem', boxShadow: 'var(--shadow-soft)' }}>
@@ -1248,6 +1349,202 @@ export default function AdminProducts() {
           )}
         </div>
       </div>
+      ) : (
+        /* Orders Manager View */
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '2rem', boxShadow: 'var(--shadow-soft)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <h2 className="serif" style={{ fontSize: '1.8rem', margin: 0 }}>
+                Customer Orders
+              </h2>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
+                All orders synced in real-time to your PostgreSQL / Neon database & Prisma ORM.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchAllOrders}
+              disabled={loadingOrders}
+              style={{
+                padding: '0.6rem 1.2rem',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                background: 'var(--text)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: loadingOrders ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {loadingOrders ? 'Refreshing...' : '↻ Refresh Orders'}
+            </button>
+          </div>
+
+          {loadingOrders ? (
+            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
+              <p>Fetching orders from Neon database...</p>
+            </div>
+          ) : dbOrders.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '4rem', border: '1px dashed var(--border)', borderRadius: '8px' }}>
+              <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '0.5rem' }}>📦</span>
+              <h3 className="serif" style={{ fontSize: '1.4rem', margin: '0.5rem 0' }}>No Orders in Database Yet</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '460px', margin: '0 auto' }}>
+                When customers complete a checkout using YouPI Direct UPI, their orders and UTR numbers will automatically appear here and in Prisma Studio.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {dbOrders.map((ord: any) => {
+                const itemsList = typeof ord.items === 'string' ? JSON.parse(ord.items) : (ord.items || []);
+                const addr = typeof ord.shippingAddress === 'string' ? JSON.parse(ord.shippingAddress) : (ord.shippingAddress || {});
+                const dateStr = new Date(ord.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+                return (
+                  <div
+                    key={ord.id}
+                    style={{
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      padding: '1.5rem',
+                      background: 'var(--surface)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '1rem',
+                    }}
+                  >
+                    {/* Header Row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)' }}>
+                          #{ord.id.slice(-8).toUpperCase()}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {dateStr}
+                        </span>
+                      </div>
+
+                      {/* Status and Actions */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <select
+                          value={ord.status}
+                          onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value)}
+                          style={{
+                            padding: '0.35rem 0.65rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            borderRadius: '4px',
+                            border: '1px solid var(--border)',
+                            background:
+                              ord.status === 'paid' ? '#f0fdf4' :
+                              ord.status === 'dispatched' ? '#eff6ff' :
+                              ord.status === 'delivered' ? '#ecfdf5' : '#fffbeb',
+                            color:
+                              ord.status === 'paid' ? '#166534' :
+                              ord.status === 'dispatched' ? '#1d4ed8' :
+                              ord.status === 'delivered' ? '#047857' : '#b45309',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <option value="paid_pending_verification">Pending Verification</option>
+                          <option value="paid">Payment Verified</option>
+                          <option value="dispatched">Dispatched</option>
+                          <option value="delivered">Delivered</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteOrder(ord.id)}
+                          style={{
+                            background: '#fef2f2',
+                            color: '#b91c1c',
+                            border: '1px solid #fecaca',
+                            borderRadius: '4px',
+                            padding: '0.35rem 0.65rem',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                          }}
+                          title="Delete Order"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Customer & Payment Details */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', fontSize: '0.82rem' }}>
+                      <div>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>
+                          Customer Details
+                        </span>
+                        <strong>{ord.userFullName || 'Guest'}</strong>
+                        <div style={{ color: 'var(--text-muted)' }}>{ord.userEmail}</div>
+                        {addr.address && (
+                          <div style={{ color: '#475569', marginTop: '0.25rem', fontSize: '0.78rem' }}>
+                            {addr.address}, {addr.city}, {addr.country}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>
+                          Payment Info
+                        </span>
+                        <div>Method: <strong>{ord.paymentMethod?.toUpperCase()}</strong></div>
+                        <div style={{ marginTop: '0.2rem' }}>
+                          UTR / Ref: <strong style={{ fontFamily: 'monospace', color: '#0369a1' }}>{ord.paymentId || 'None'}</strong>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>
+                          Total Amount
+                        </span>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text)' }}>
+                          ₹{Number(ord.total).toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          Subtotal ₹{Number(ord.subtotal).toFixed(2)} + Shipping ₹{Number(ord.shippingFee).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Ordered Items Preview */}
+                    <div style={{ background: '#f8fafc', padding: '0.85rem 1rem', borderRadius: '6px', border: '1px solid #f1f5f9' }}>
+                      <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '0.5rem' }}>
+                        Purchased Items ({itemsList.length})
+                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        {itemsList.map((item: any, idx: number) => (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              {item.image && (
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  style={{ width: '32px', height: '38px', objectFit: 'cover', borderRadius: '3px' }}
+                                />
+                              )}
+                              <span>
+                                <strong>{item.name}</strong> × {item.quantity}
+                                {item.size ? ` (Size: ${item.size})` : ''}
+                                {item.color ? ` (Color: ${item.color})` : ''}
+                              </span>
+                            </div>
+                            <span style={{ fontWeight: 600 }}>
+                              ₹{(Number(item.price) * (Number(item.quantity) || 1)).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
