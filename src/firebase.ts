@@ -54,7 +54,9 @@ export interface OrderDoc {
     address: string;
     city: string;
     country: string;
+    contactNumber?: string;
   };
+  contactNumber?: string;
   status: string;
   paymentMethod: 'online' | 'cod' | 'upi_qr' | string;
   createdAt: number;
@@ -169,6 +171,7 @@ export async function getUserOrders(email: string): Promise<(OrderDoc & { id: st
           shippingFee: Number(o.shippingFee) || 0,
           total: Number(o.total) || 0,
           shippingAddress: typeof o.shippingAddress === 'string' ? JSON.parse(o.shippingAddress) : (o.shippingAddress || {}),
+          contactNumber: o.contactNumber || (typeof o.shippingAddress === 'object' ? o.shippingAddress?.contactNumber : undefined),
           status: o.status,
           paymentMethod: o.paymentMethod,
           paymentId: o.paymentId,

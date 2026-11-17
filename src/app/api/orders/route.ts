@@ -52,7 +52,10 @@ export async function POST(request: Request) {
         subtotal: Number(body.subtotal) || 0,
         shippingFee: Number(body.shippingFee) || 0,
         total: Number(body.total) || 0,
-        shippingAddress: body.shippingAddress || {},
+        shippingAddress: {
+          ...(typeof body.shippingAddress === 'object' ? body.shippingAddress : {}),
+          ...(body.contactNumber ? { contactNumber: body.contactNumber } : {}),
+        },
         status: body.status || 'paid_pending_verification',
         paymentMethod: body.paymentMethod || 'youpi_upi',
         paymentId: body.paymentId || null,

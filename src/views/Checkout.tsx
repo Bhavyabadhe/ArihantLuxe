@@ -18,6 +18,7 @@ export default function Checkout() {
   const [email, setEmail] = useState(user?.email || '');
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [address, setAddress] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
   const [city, setCity] = useState('');
   const [country] = useState('India');
 
@@ -46,7 +47,7 @@ export default function Checkout() {
   const total = subtotal + shipping;
 
   const validateShipping = (): boolean => {
-    if (!email.trim() || !fullName.trim() || !address.trim() || !city.trim() || !country.trim()) {
+    if (!email.trim() || !fullName.trim() || !contactNumber.trim() || !address.trim() || !city.trim() || !country.trim()) {
       setNotification({
         title: 'Missing Information',
         message: 'Please fill in all shipping details to proceed with checkout.',
@@ -80,6 +81,7 @@ export default function Checkout() {
         shippingFee: shipping,
         total: total,
         shippingAddress: { email: email.trim(), fullName: fullName.trim(), address: address.trim(), city: city.trim(), country },
+        contactNumber: contactNumber.trim(),
         status: 'paid_pending_verification',
         paymentMethod: 'youpi_upi',
         paymentId: cleanUtr,
@@ -155,6 +157,17 @@ export default function Checkout() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Street address, apartment, building, etc."
+              />
+            </div>
+
+            <div className="auth-field" style={{ marginTop: '1.5rem' }}>
+              <label className="auth-label">Contact Number</label>
+              <input
+                type="number"
+                className="auth-input"
+                value={contactNumber}
+                onChange={(e) => setContactNumber(e.target.value)}
+                placeholder="Enter your contact number"
               />
             </div>
 

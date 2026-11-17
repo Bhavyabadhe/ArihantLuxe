@@ -1479,6 +1479,11 @@ export default function AdminProducts() {
                         </span>
                         <strong>{ord.userFullName || 'Guest'}</strong>
                         <div style={{ color: 'var(--text-muted)' }}>{ord.userEmail}</div>
+                        {(ord.contactNumber || addr.contactNumber) && (
+                          <div style={{ color: '#0369a1', fontWeight: 600, marginTop: '0.2rem', fontSize: '0.78rem' }}>
+                            📞 {ord.contactNumber || addr.contactNumber}
+                          </div>
+                        )}
                         {addr.address && (
                           <div style={{ color: '#475569', marginTop: '0.25rem', fontSize: '0.78rem' }}>
                             {addr.address}, {addr.city}, {addr.country}
