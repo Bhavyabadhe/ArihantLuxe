@@ -15,13 +15,11 @@ export default function Checkout() {
   const items = useSelector((state: RootState) => state.cart.items);
   const { user, isAuthenticated, isInitialized } = useSelector((state: RootState) => state.auth);
 
-  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState(user?.email || '');
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [country] = useState('India');
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cod'>('upi');
 
   // YouPI-PG Gateway & UTR state
   const [showQrModal, setShowQrModal] = useState(false);
@@ -59,46 +57,10 @@ export default function Checkout() {
     return true;
   };
 
-  const handleCheckoutSubmit = async () => {
+  const handleCheckoutSubmit = () => {
     if (!validateShipping()) return;
 
-    if (paymentMethod === 'cod') {
-      setIsLoading(true);
-      try {
-        const orderId = await createOrder({
-          userEmail: email.trim(),
-          userFullName: fullName.trim(),
-          items: items,
-          subtotal: subtotal,
-          shippingFee: shipping,
-          total: total,
-          shippingAddress: { email: email.trim(), fullName: fullName.trim(), address: address.trim(), city: city.trim(), country },
-          status: 'cod_pending',
-          paymentMethod: 'cod',
-          createdAt: Date.now(),
-        });
-
-        dispatch(clearCart());
-        setNotification({
-          title: 'Order Placed!',
-          message: `Thank you for shopping with Arihant Luxe! Your Cash on Delivery order #${orderId.slice(0, 8).toUpperCase()} has been successfully registered. We are preparing to dispatch your package.`,
-          type: 'success',
-          onClose: () => navigate('/account'),
-        });
-      } catch (err: any) {
-        console.error('COD Order Error:', err);
-        setNotification({
-          title: 'Order Failed',
-          message: 'Could not register your order. Please check your network connection and try again.',
-          type: 'error',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
-
-    // For YouPI UPI, generate a unique order reference and open YouPI modal
+    // Generate unique order reference and open YouPI UPI modal
     const generatedRef = 'ALX-' + Date.now().toString(36).toUpperCase();
     setOrderRef(generatedRef);
     setUtrError('');
@@ -231,16 +193,13 @@ export default function Checkout() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 {/* YouPI Direct UPI Payment */}
                 <div
-                  className={`payment-method-card ${paymentMethod === 'upi' ? 'selected' : ''}`}
-                  onClick={() => setPaymentMethod('upi')}
+                  className="payment-method-card selected"
                   style={{
-                    border: paymentMethod === 'upi' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                    border: '2px solid var(--accent)',
                     padding: '1.25rem',
                     borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    transition: 'var(--transition)',
-                    backgroundColor: paymentMethod === 'upi' ? '#fff' : 'transparent',
-                    boxShadow: paymentMethod === 'upi' ? 'var(--shadow-soft)' : 'none',
+                    backgroundColor: '#fff',
+                    boxShadow: 'var(--shadow-soft)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
@@ -253,9 +212,9 @@ export default function Checkout() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: paymentMethod === 'upi' ? 'var(--accent)' : 'transparent',
+                        background: 'var(--accent)',
                       }}>
-                        {paymentMethod === 'upi' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />}
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />
                       </div>
                       <span style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.05em' }}>
                         YouPI Direct UPI (0% Convenience Fee)
@@ -286,42 +245,6 @@ export default function Checkout() {
                     ))}
                   </div>
                 </div>
-
-                {/* Cash on Delivery (COD) */}
-                <div
-                  className={`payment-method-card ${paymentMethod === 'cod' ? 'selected' : ''}`}
-                  onClick={() => setPaymentMethod('cod')}
-                  style={{
-                    border: paymentMethod === 'cod' ? '2px solid var(--accent)' : '1px solid var(--border)',
-                    padding: '1.25rem',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    transition: 'var(--transition)',
-                    backgroundColor: paymentMethod === 'cod' ? '#fff' : 'transparent',
-                    boxShadow: paymentMethod === 'cod' ? 'var(--shadow-soft)' : 'none',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
-                    <div style={{
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      border: '2px solid var(--accent)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: paymentMethod === 'cod' ? 'var(--accent)' : 'transparent',
-                    }}>
-                      {paymentMethod === 'cod' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />}
-                    </div>
-                    <span style={{ fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.05em' }}>
-                      Cash on Delivery (COD)
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '2rem' }}>
-                    Pay with cash or UPI to courier upon package delivery.
-                  </p>
-                </div>
               </div>
             </div>
           </div>
@@ -333,10 +256,9 @@ export default function Checkout() {
               <button
                 type="button"
                 className="checkout-pay-btn"
-                disabled={isLoading}
                 onClick={handleCheckoutSubmit}
               >
-                {isLoading ? 'Processing...' : paymentMethod === 'cod' ? 'Place Order (COD)' : `Pay Rs.${total.toFixed(2)} with YouPI`}
+                Pay Rs.{total.toFixed(2)} with YouPI
               </button>
             </div>
           </div>
