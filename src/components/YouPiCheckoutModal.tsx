@@ -28,7 +28,6 @@ export const YouPiCheckoutModal: React.FC<YouPiCheckoutModalProps> = ({
   isSubmitting = false,
   errorMessage = '',
 }) => {
-  const [activeTab, setActiveTab] = useState<'qr' | 'intent'>('qr');
   const [utrNumber, setUtrNumber] = useState('');
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [localError, setLocalError] = useState('');
@@ -258,206 +257,162 @@ export const YouPiCheckoutModal: React.FC<YouPiCheckoutModalProps> = ({
             </div>
           </div>
 
-          {/* Tab Switcher */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              background: '#f1f5f9',
-              padding: '3px',
-              borderRadius: '8px',
-              marginBottom: '1.25rem',
-            }}
-          >
+          {/* SECTION 1: Tap to Pay on Mobile */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <span style={{ fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#475569', fontWeight: 700, display: 'block', marginBottom: '0.65rem' }}>
+              📱 Tap to Pay Directly with UPI App
+            </span>
+
+            {/* Primary Universal Launch Button */}
             <button
               type="button"
-              onClick={() => setActiveTab('qr')}
+              onClick={() => openApp(upiPayload.standardUrl)}
               style={{
+                width: '100%',
+                padding: '0.85rem',
+                backgroundColor: '#0f172a',
+                color: '#ffffff',
                 border: 'none',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '6px',
-                fontSize: '0.78rem',
-                fontWeight: 600,
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
                 cursor: 'pointer',
-                background: activeTab === 'qr' ? '#ffffff' : 'transparent',
-                color: activeTab === 'qr' ? '#0f172a' : '#64748b',
-                boxShadow: activeTab === 'qr' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                transition: 'all 0.15s ease',
+                marginBottom: '0.65rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)',
               }}
             >
-              📷 Dynamic UPI QR
+              <span>⚡</span> Open in Default UPI App
             </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('intent')}
-              style={{
-                border: 'none',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '6px',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                background: activeTab === 'intent' ? '#ffffff' : 'transparent',
-                color: activeTab === 'intent' ? '#0f172a' : '#64748b',
-                boxShadow: activeTab === 'intent' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              📱 Tap to Pay on Mobile
-            </button>
-          </div>
 
-          {/* TAB 1: Dynamic Vector SVG QR Code */}
-          {activeTab === 'qr' && (
-            <div style={{ animation: 'fadeIn 0.2s ease-in' }}>
-              <div
-                style={{
-                  background: '#ffffff',
-                  padding: '1rem',
-                  borderRadius: '16px',
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08)',
-                  display: 'inline-block',
-                  margin: '0 auto 1rem auto',
-                }}
-              >
-                <QRCodeSVG
-                  value={upiPayload.standardUrl}
-                  size={210}
-                  level="M"
-                  includeMargin={true}
-                  style={{ display: 'block', margin: '0 auto' }}
-                />
-              </div>
-
-              <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem', lineHeight: '1.4' }}>
-                Open <strong>Google Pay, PhonePe, Paytm, Navi</strong> or any UPI App to scan.
-                <br />
-                <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Amount ₹{amount.toFixed(2)} and payee are auto-locked in QR</span>
-              </p>
-            </div>
-          )}
-
-          {/* TAB 2: Mobile Deep-Link Intents */}
-          {activeTab === 'intent' && (
-            <div style={{ animation: 'fadeIn 0.2s ease-in', marginBottom: '1rem' }}>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.85rem' }}>
-                Tap your preferred UPI app to launch payment directly:
-              </p>
-
-              {/* Primary Universal Launch Button */}
+            {/* Specific App Launchers Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
               <button
                 type="button"
-                onClick={() => openApp(upiPayload.standardUrl)}
+                onClick={() => openApp(upiPayload.gpayUrl)}
                 style={{
-                  width: '100%',
-                  padding: '0.85rem',
-                  backgroundColor: '#0f172a',
-                  color: '#ffffff',
-                  border: 'none',
+                  padding: '0.7rem 0.5rem',
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
                   borderRadius: '8px',
-                  fontSize: '0.84rem',
+                  fontSize: '0.78rem',
                   fontWeight: 700,
+                  color: '#334155',
                   cursor: 'pointer',
-                  marginBottom: '0.65rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.5rem',
-                  boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)',
+                  gap: '0.35rem',
                 }}
               >
-                <span>⚡</span> Open in Default UPI App
+                <span style={{ color: '#4285F4', fontWeight: 800 }}>G</span> Google Pay
               </button>
 
-              {/* Specific App Launchers Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  onClick={() => openApp(upiPayload.gpayUrl)}
-                  style={{
-                    padding: '0.7rem 0.5rem',
-                    background: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    color: '#334155',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.35rem',
-                  }}
-                >
-                  <span style={{ color: '#4285F4', fontWeight: 800 }}>G</span> Google Pay
-                </button>
+              <button
+                type="button"
+                onClick={() => openApp(upiPayload.phonepeUrl)}
+                style={{
+                  padding: '0.7rem 0.5rem',
+                  background: '#5f259f',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
+                }}
+              >
+                <span>पे</span> PhonePe
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => openApp(upiPayload.phonepeUrl)}
-                  style={{
-                    padding: '0.7rem 0.5rem',
-                    background: '#5f259f',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.35rem',
-                  }}
-                >
-                  <span>पे</span> PhonePe
-                </button>
+              <button
+                type="button"
+                onClick={() => openApp(upiPayload.paytmUrl)}
+                style={{
+                  padding: '0.7rem 0.5rem',
+                  background: '#ffffff',
+                  border: '1px solid #00b9f5',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                  color: '#002e6e',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
+                }}
+              >
+                Paytm
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => openApp(upiPayload.paytmUrl)}
-                  style={{
-                    padding: '0.7rem 0.5rem',
-                    background: '#ffffff',
-                    border: '1px solid #00b9f5',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 800,
-                    color: '#002e6e',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.35rem',
-                  }}
-                >
-                  Paytm
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => openApp(upiPayload.credUrl)}
-                  style={{
-                    padding: '0.7rem 0.5rem',
-                    background: '#18181b',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.35rem',
-                  }}
-                >
-                  CRED Pay
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => openApp(upiPayload.credUrl)}
+                style={{
+                  padding: '0.7rem 0.5rem',
+                  background: '#18181b',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
+                }}
+              >
+                CRED Pay
+              </button>
             </div>
-          )}
+          </div>
+
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', margin: '1.25rem 0', gap: '0.75rem' }}>
+            <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+            <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#94a3b8', fontWeight: 600 }}>
+              OR SCAN QR CODE TO PAY
+            </span>
+            <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+          </div>
+
+          {/* SECTION 2: Dynamic Vector SVG QR Code (Positioned Below Tap to Pay) */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div
+              style={{
+                background: '#ffffff',
+                padding: '0.85rem',
+                borderRadius: '16px',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 8px 25px -5px rgba(0, 0, 0, 0.08)',
+                display: 'inline-block',
+                margin: '0 auto 0.65rem auto',
+              }}
+            >
+              <QRCodeSVG
+                value={upiPayload.standardUrl}
+                size={185}
+                level="M"
+                includeMargin={true}
+                style={{ display: 'block', margin: '0 auto' }}
+              />
+            </div>
+
+            <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>
+              Scan using any UPI app (GPay, PhonePe, Paytm, Navi, BHIM).
+              <br />
+              <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Amount ₹{amount.toFixed(2)} and payee are auto-locked in QR</span>
+            </p>
+          </div>
 
           {/* Payee VPA Verification & Copy Box */}
           <div
