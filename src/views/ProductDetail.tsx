@@ -66,9 +66,19 @@ export default function ProductDetail() {
   const [addedMessage, setAddedMessage] = useState(false);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState('M');
-  const [selectedColor, setSelectedColor] = useState('Black');
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   const [showSizeChart, setShowSizeChart] = useState(false);
+
+  // Sync selected size and color whenever product changes
+  useEffect(() => {
+    if (product) {
+      const pSizes = Array.isArray(product.size) ? product.size : [];
+      const pColors = Array.isArray(product.color) ? product.color : [];
+      setSelectedSize(pSizes[0] || '');
+      setSelectedColor(pColors[0] || '');
+    }
+  }, [product]);
 
   // Related products from collection
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -285,8 +295,8 @@ export default function ProductDetail() {
   const allImages = extractImages(product);
   const currentImage = allImages[activeImageIndex] || allImages[0];
   const price = typeof product.price === 'number' ? product.price : parseFloat(product.price) || 0;
-  const sizes = Array.isArray(product.size) && product.size.length > 0 ? product.size : ['M', 'L', 'XL', 'XXL'];
-  const colors = Array.isArray(product.color) && product.color.length > 0 ? product.color : ['Black', 'White', 'Beige'];
+  const sizes = Array.isArray(product.size) ? product.size : [];
+  const colors = Array.isArray(product.color) ? product.color : [];
 
   const handleAddToCart = () => {
     dispatch(

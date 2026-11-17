@@ -97,7 +97,7 @@ export default function AdminProducts() {
   const [description, setDescription] = useState('');
   const [sizes, setSizes] = useState<string[]>(['M', 'L', 'XL', 'XXL']);
   const [customSize, setCustomSize] = useState('');
-  const [colors, setColors] = useState<string[]>(['Black', 'White', 'Beige']);
+  const [colors, setColors] = useState<string[]>([]);
   const [customColor, setCustomColor] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [imageUrlInput, setImageUrlInput] = useState('');
@@ -205,7 +205,7 @@ export default function AdminProducts() {
     setDescription('');
     setSizes(['M', 'L', 'XL', 'XXL']);
     setCustomSize('');
-    setColors(['Black', 'White', 'Beige']);
+    setColors([]);
     setCustomColor('');
     setImages([]);
     setImageUrlInput('');
@@ -225,9 +225,9 @@ export default function AdminProducts() {
     setStock(String(p.stock));
     setBadge(p.badge || '');
     setDescription(p.description || '');
-    setSizes(Array.isArray(p.size) && p.size.length > 0 ? p.size : ['M', 'L', 'XL', 'XXL']);
+    setSizes(Array.isArray(p.size) ? p.size : []);
     setCustomSize('');
-    setColors(Array.isArray(p.color) && p.color.length > 0 ? p.color : ['Black', 'White', 'Beige']);
+    setColors(Array.isArray(p.color) ? p.color : []);
     setCustomColor('');
 
     // Resolve images
