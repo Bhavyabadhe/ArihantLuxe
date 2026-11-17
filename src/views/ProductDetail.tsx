@@ -3,6 +3,12 @@ import { useParams, Link, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
 import ProductCard, { Product } from '../components/ProductCard';
+import {
+  CustomerReview,
+  subscribeProductReviews,
+  addProductReview,
+  voteReviewHelpful,
+} from '../firebase';
 
 // Helper to normalize images from any format (array, comma-separated, JSON array string)
 function extractImages(prod: any): string[] {
@@ -60,18 +66,6 @@ function extractImages(prod: any): string[] {
   return unique.length > 0 ? unique : ['https://placehold.co/600x600/png'];
 }
 
-interface CustomerReview {
-  id: number | string;
-  name: string;
-  city: string;
-  rating: number;
-  date: string;
-  verified: boolean;
-  title: string;
-  comment: string;
-  helpful: number;
-}
-
 export default function ProductDetail() {
   const params = useParams<{ id?: string; slug?: string }>();
   const slug = params.slug || params.id;
@@ -119,7 +113,17 @@ export default function ProductDetail() {
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [helpfulClicked, setHelpfulClicked] = useState<{ [key: string]: boolean }>({});
+
+  // Real-time synchronization of reviews via Firebase Firestore
+  useEffect(() => {
+    if (!slug) return;
+    const unsubscribe = subscribeProductReviews(slug, product?.id, (liveReviews) => {
+      setUserReviews(liveReviews);
+    });
+    return () => unsubscribe();
+  }, [slug, product?.id]);
 
   // Fetch full product data (including all gallery images) from database
   useEffect(() => {
@@ -196,14 +200,14 @@ export default function ProductDetail() {
       return [
         {
           id: 1,
-          name: 'Pooja Sharma',
-          city: 'Mumbai',
+          name: 'Harshit Sharma',
+          city: 'Jaipur',
           rating: 5,
-          date: '3 days ago',
+          date: 'Abhi Abhi',
           verified: true,
-          title: 'Exquisite antique gold finish! Pure royalty.',
+          title: 'Mai AAyu yani ki harshit sharma, ye shapat leta hu ki..',
           comment:
-            'Ordered this for my sister’s Sangeet ceremony. The intricate Goddess Lakshmi and peacock motifs along with pearl clusters have a rich, authentic temple jewellery luster. It has substantial royal weight without being uncomfortable.',
+            'Mai MOTA hu MOTA the aur mota hi rahunga.',
           helpful: 24,
         },
         {
@@ -247,15 +251,15 @@ export default function ProductDetail() {
       return [
         {
           id: 1,
-          name: 'Ritu Patel',
-          city: 'Ahmedabad',
+          name: 'Harshit Sharma',
+          city: 'Jaipur',
           rating: 5,
-          date: '2 days ago',
+          date: 'Abhi Abhi',
           verified: true,
-          title: 'Stunning embroidery and majestic drape',
+          title: 'Mai AAyu yani ki harshit sharma, ye shapat leta hu ki..',
           comment:
-            'The detailed embroidery work on this piece is breathtaking! The fabric has a royal sheen yet remains lightweight, breathable, and comfortable throughout the evening. Truly couture grade.',
-          helpful: 21,
+            'Mai MOTA hu MOTA the aur mota hi rahunga.',
+          helpful: 24,
         },
         {
           id: 2,
@@ -337,37 +341,46 @@ export default function ProductDetail() {
     setTimeout(() => setAddedMessage(false), 2500);
   };
 
-  const handleReviewSubmit = (e: React.FormEvent) => {
+  const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewAuthor.trim() || !reviewComment.trim()) return;
+    if (!slug) return;
 
-    const newRev: CustomerReview = {
-      id: Date.now(),
-      name: reviewAuthor.trim(),
-      city: reviewCity.trim() || 'Verified Buyer',
-      rating: reviewRating,
-      date: 'Just now',
-      verified: true,
-      title: reviewTitle.trim() || 'Exceptional craftsmanship & quality',
-      comment: reviewComment.trim(),
-      helpful: 1,
-    };
+    setIsSubmittingReview(true);
+    try {
+      await addProductReview({
+        productSlug: slug,
+        productId: product?.id,
+        name: reviewAuthor.trim(),
+        city: reviewCity.trim() || 'Verified Buyer',
+        rating: reviewRating,
+        title: reviewTitle.trim() || 'Exceptional craftsmanship & quality',
+        comment: reviewComment.trim(),
+      });
 
-    setUserReviews([newRev, ...userReviews]);
-    setReviewAuthor('');
-    setReviewCity('');
-    setReviewTitle('');
-    setReviewComment('');
-    setReviewSuccess(true);
-    setTimeout(() => {
-      setReviewSuccess(false);
-      setShowReviewForm(false);
-    }, 2500);
+      setReviewAuthor('');
+      setReviewCity('');
+      setReviewTitle('');
+      setReviewComment('');
+      setReviewSuccess(true);
+      setTimeout(() => {
+        setReviewSuccess(false);
+        setShowReviewForm(false);
+      }, 2500);
+    } catch (err) {
+      console.error('Failed to submit review:', err);
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
 
   const handleHelpfulClick = (id: number | string) => {
-    if (helpfulClicked[String(id)]) return;
+    if (helpfulClicked[String(id)] || !slug) return;
     setHelpfulClicked((prev) => ({ ...prev, [String(id)]: true }));
+    voteReviewHelpful(slug, id);
+    setUserReviews((prev) =>
+      prev.map((r) => (String(r.id) === String(id) ? { ...r, helpful: (r.helpful || 0) + 1 } : r))
+    );
   };
 
   return (
@@ -1215,10 +1228,16 @@ export default function ProductDetail() {
 
             <button
               type="submit"
+              disabled={isSubmittingReview}
               className="hero-btn"
-              style={{ padding: '0.75rem 2rem', fontSize: '0.82rem' }}
+              style={{
+                padding: '0.75rem 2rem',
+                fontSize: '0.82rem',
+                opacity: isSubmittingReview ? 0.7 : 1,
+                cursor: isSubmittingReview ? 'not-allowed' : 'pointer',
+              }}
             >
-              Submit Review
+              {isSubmittingReview ? 'Publishing Review...' : 'Submit Review'}
             </button>
           </form>
         )}

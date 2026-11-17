@@ -6,6 +6,15 @@ import {
   updateProfile as fbUpdateProfile,
   type Auth,
 } from 'firebase/auth';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  where,
+  type Firestore,
+} from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyCFJN6c3-wh-M4eL6au660-ZvJWhSRKEv4",
@@ -19,6 +28,7 @@ const firebaseConfig = {
 
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth: Auth = getAuth(app);
+export const db: Firestore = getFirestore(app);
 
 export interface BlogPost {
   id: string;
@@ -321,10 +331,219 @@ export async function deleteBlogPost(id: string): Promise<void> {
   localStorage.setItem('arihant_blog_posts', JSON.stringify(filtered));
 }
 
+// ----------------------------------------------------
+// Real-time Product Reviews via Firebase Firestore
+// ----------------------------------------------------
+
+export interface CustomerReview {
+  id: number | string;
+  name: string;
+  city: string;
+  rating: number;
+  date: string;
+  verified: boolean;
+  title: string;
+  comment: string;
+  helpful: number;
+  createdAt?: number;
+}
+
+const REVIEWS_STORAGE_PREFIX = 'arihant_reviews_';
+
+export function formatReviewDate(timestamp?: number): string {
+  if (!timestamp) return 'Recently';
+  const diffMs = Date.now() - timestamp;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 2) return 'Just now';
+  if (mins < 60) return `${mins} mins ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hr${hours > 1 ? 's' : ''} ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 30) return `${days} days ago`;
+  return new Date(timestamp).toLocaleDateString('en-IN', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+export function getLocalProductReviews(slug: string): CustomerReview[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(`${REVIEWS_STORAGE_PREFIX}${slug.toLowerCase()}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalProductReviews(slug: string, reviews: CustomerReview[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`${REVIEWS_STORAGE_PREFIX}${slug.toLowerCase()}`, JSON.stringify(reviews));
+  } catch (err) {
+    console.warn('Could not cache reviews locally:', err);
+  }
+}
+
+/**
+ * Real-time subscription to product reviews using Firebase Firestore
+ * Seamlessly integrates local cache for instant 0ms first render
+ */
+export function subscribeProductReviews(
+  productSlug: string,
+  productId: string | number | undefined,
+  onReviews: (reviews: CustomerReview[]) => void
+): () => void {
+  if (!productSlug) return () => {};
+
+  const cleanSlug = productSlug.toLowerCase().trim();
+
+  // 1. Instantly deliver cached reviews for snappy initial display
+  const localCached = getLocalProductReviews(cleanSlug);
+  if (localCached.length > 0) {
+    onReviews(localCached);
+  }
+
+  // 2. Realtime Firestore listener
+  let unsubscribe = () => {};
+
+  try {
+    const reviewsRef = collection(db, 'product_reviews');
+    const q = query(reviewsRef, where('productSlug', '==', cleanSlug));
+
+    unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const firestoreReviews: CustomerReview[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          firestoreReviews.push({
+            id: docSnap.id,
+            name: data.name || 'Verified Buyer',
+            city: data.city || 'Verified Buyer',
+            rating: typeof data.rating === 'number' ? data.rating : 5,
+            date: formatReviewDate(data.createdAt),
+            verified: data.verified !== false,
+            title: data.title || '',
+            comment: data.comment || '',
+            helpful: typeof data.helpful === 'number' ? data.helpful : 1,
+            createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
+          });
+        });
+
+        // Merge Firestore reviews with local cache ensuring nothing is lost
+        const mergedMap = new Map<string, CustomerReview>();
+        localCached.forEach((r) => mergedMap.set(String(r.id), r));
+        firestoreReviews.forEach((r) => mergedMap.set(String(r.id), r));
+
+        const finalReviews = Array.from(mergedMap.values()).sort(
+          (a, b) => (b.createdAt || 0) - (a.createdAt || 0)
+        );
+
+        saveLocalProductReviews(cleanSlug, finalReviews);
+        onReviews(finalReviews);
+      },
+      (error) => {
+        console.warn('Firestore real-time listener notice (using local store):', error.message);
+        onReviews(getLocalProductReviews(cleanSlug));
+      }
+    );
+  } catch (err: any) {
+    console.warn('Could not initialize Firestore onSnapshot:', err?.message);
+    onReviews(getLocalProductReviews(cleanSlug));
+  }
+
+  return () => {
+    try {
+      unsubscribe();
+    } catch {}
+  };
+}
+
+/**
+ * Add a review to Firebase Firestore & local persistence
+ */
+export async function addProductReview(reviewData: {
+  productSlug: string;
+  productId?: string | number;
+  name: string;
+  city?: string;
+  rating: number;
+  title: string;
+  comment: string;
+}): Promise<CustomerReview> {
+  const cleanSlug = reviewData.productSlug.toLowerCase().trim();
+  const now = Date.now();
+  const tempId = 'rev_' + now + '_' + Math.random().toString(36).substring(2, 7);
+
+  const newReview: CustomerReview = {
+    id: tempId,
+    name: reviewData.name.trim(),
+    city: reviewData.city?.trim() || 'Verified Buyer',
+    rating: reviewData.rating || 5,
+    date: 'Just now',
+    verified: true,
+    title: reviewData.title.trim() || 'Exceptional craftsmanship & quality',
+    comment: reviewData.comment.trim(),
+    helpful: 1,
+    createdAt: now,
+  };
+
+  // 1. Immediately store in local cache so user sees it right away
+  const currentLocal = getLocalProductReviews(cleanSlug);
+  const updatedLocal = [newReview, ...currentLocal.filter((r) => String(r.id) !== tempId)];
+  saveLocalProductReviews(cleanSlug, updatedLocal);
+
+  // 2. Persist to Firebase Firestore
+  try {
+    const docRef = await addDoc(collection(db, 'product_reviews'), {
+      productSlug: cleanSlug,
+      productId: reviewData.productId ? String(reviewData.productId) : '',
+      name: newReview.name,
+      city: newReview.city,
+      rating: newReview.rating,
+      title: newReview.title,
+      comment: newReview.comment,
+      verified: true,
+      helpful: 1,
+      createdAt: now,
+    });
+
+    newReview.id = docRef.id;
+    const finalLocal = [newReview, ...currentLocal.filter((r) => String(r.id) !== tempId)];
+    saveLocalProductReviews(cleanSlug, finalLocal);
+    return newReview;
+  } catch (err: any) {
+    console.warn('Saved to local storage. (Firestore write notice):', err.message);
+    return newReview;
+  }
+}
+
+/**
+ * Upvote review helpful count
+ */
+export async function voteReviewHelpful(
+  productSlug: string,
+  reviewId: string | number
+): Promise<void> {
+  const cleanSlug = productSlug.toLowerCase().trim();
+  const current = getLocalProductReviews(cleanSlug);
+  const updated = current.map((r) => {
+    if (String(r.id) === String(reviewId)) {
+      return { ...r, helpful: (r.helpful || 0) + 1 };
+    }
+    return r;
+  });
+  saveLocalProductReviews(cleanSlug, updated);
+}
+
 // Bind to window for global runtime access
 if (typeof window !== 'undefined') {
   const g = window as any;
   g.auth = auth;
+  g.db = db;
   g.createUserWithEmailAndPassword = fbSignUp;
   g.signInWithEmailAndPassword = fbSignIn;
   g.updateProfile = fbUpdateProfile;
@@ -336,4 +555,7 @@ if (typeof window !== 'undefined') {
   g.getBlogPostById = getBlogPostById;
   g.createOrUpdateBlogPost = createOrUpdateBlogPost;
   g.deleteBlogPost = deleteBlogPost;
+  g.subscribeProductReviews = subscribeProductReviews;
+  g.addProductReview = addProductReview;
+  g.voteReviewHelpful = voteReviewHelpful;
 }
