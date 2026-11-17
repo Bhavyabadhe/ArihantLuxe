@@ -62,7 +62,7 @@ export default function Jewellery() {
       <section className="category-hero">
         <div className="category-hero-overlay" />
         <img
-          src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1600&auto=format&fit=crop&q=80"
+          src="https://images.unsplash.com/photo-1722410180687-b05b50922362?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D"
           alt="High Jewellery Collection"
           className="category-hero-bg"
         />

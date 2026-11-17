@@ -29,11 +29,11 @@ export default function Fashion() {
 
   // Filter for fashion / clothing items
   const FASHION_KEYWORDS = ['fashion', 'clothing', 'apparel', 'dress', 'shirt', 'pant', 'jacket', 't-shirt', 'wear', 'top'];
-  
+
   const fashionProducts = products.filter((p) => {
     const cat = (p.category || '').toLowerCase().trim();
     const name = (p.name || '').toLowerCase();
-    
+
     // Exact or keyword match
     const isFashion = FASHION_KEYWORDS.some((kw) => cat.includes(kw) || name.includes(kw));
 
@@ -62,7 +62,7 @@ export default function Fashion() {
       <section className="category-hero">
         <div className="category-hero-overlay" />
         <img
-          src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&auto=format&fit=crop&q=80"
+          src="/zero.png"
           alt="Fashion & Clothing Collection"
           className="category-hero-bg"
         />
