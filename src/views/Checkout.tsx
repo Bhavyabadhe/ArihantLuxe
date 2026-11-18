@@ -111,10 +111,10 @@ export default function Checkout() {
       return false;
     }
     const cleanDigits = mobileNumber.replace(/\D/g, '');
-    if (cleanDigits.length < 10) {
+    if (cleanDigits.length !== 10) {
       setNotification({
         title: 'Invalid Mobile Number',
-        message: 'Please enter a valid 10-digit Mobile/WhatsApp number.',
+        message: 'Mobile/WhatsApp number must be exactly 10 digits.',
         type: 'warning',
       });
       return false;
@@ -296,18 +296,64 @@ export default function Checkout() {
               </div>
 
               <div className="auth-field">
-                <label className="auth-label">
-                  Mobile/WhatsApp No. <span style={{ color: '#b91c1c' }}>*</span>
-                </label>
-                <input
-                  type="tel"
-                  className="auth-input"
-                  value={mobileNumber}
-                  onChange={(e) => setMobileNumber(e.target.value)}
-                  placeholder="10-digit mobile number"
-                  maxLength={13}
-                  required
-                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="auth-label" style={{ margin: 0 }}>
+                    Mobile/WhatsApp No. <span style={{ color: '#b91c1c' }}>*</span>
+                  </label>
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      color: mobileNumber.length === 10 ? '#166534' : 'var(--text-muted)',
+                    }}
+                  >
+                    {mobileNumber.length}/10 digits
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: 'var(--bg-alt)',
+                    border: mobileNumber.length === 10 ? '1px solid #16a34a' : '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    overflow: 'hidden',
+                    marginTop: '0.35rem',
+                  }}
+                >
+                  <span
+                    style={{
+                      padding: '0.8rem 0.85rem',
+                      fontSize: '0.88rem',
+                      fontWeight: 700,
+                      color: 'var(--text)',
+                      borderRight: '1px solid var(--border)',
+                      background: '#f8fafc',
+                      userSelect: 'none',
+                    }}
+                  >
+                    🇮🇳 +91
+                  </span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      padding: '0.8rem 1rem',
+                      fontSize: '0.95rem',
+                      letterSpacing: '0.08em',
+                      width: '100%',
+                      outline: 'none',
+                    }}
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="10-digit mobile number"
+                    maxLength={10}
+                    required
+                  />
+                </div>
               </div>
             </div>
 

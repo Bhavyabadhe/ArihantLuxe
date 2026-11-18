@@ -84,13 +84,13 @@ export const YouPiCheckoutModal: React.FC<YouPiCheckoutModalProps> = ({
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const clean = utrNumber.trim();
+    const clean = utrNumber.trim().replace(/\D/g, '');
     if (!clean) {
-      setLocalError('Please enter the 12-digit UTR or Transaction Reference number.');
+      setLocalError('Please enter the 12-digit UTR / Bank Reference number from your payment receipt.');
       return;
     }
-    if (clean.length < 6) {
-      setLocalError('UTR / Reference number is too short. Please check your UPI receipt.');
+    if (clean.length !== 12) {
+      setLocalError(`UTR must be exactly 12 digits. You entered ${clean.length} digit${clean.length === 1 ? '' : 's'}.`);
       return;
     }
     setLocalError('');
@@ -457,36 +457,49 @@ export const YouPiCheckoutModal: React.FC<YouPiCheckoutModalProps> = ({
 
           {/* UTR Confirmation Form (YouPI Verification Step) */}
           <form onSubmit={handleFormSubmit} style={{ textAlign: 'left', marginTop: '0.5rem' }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.74rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                fontWeight: 700,
-                color: '#334155',
-                marginBottom: '0.35rem',
-              }}
-            >
-              12-Digit UTR / Bank Reference No. <span style={{ color: '#ef4444' }}>*</span>
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.74rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontWeight: 700,
+                  color: '#334155',
+                }}
+              >
+                12-Digit UTR / Bank Reference No. <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontFamily: 'monospace',
+                  fontWeight: 700,
+                  color: utrNumber.length === 12 ? '#166534' : '#64748b',
+                }}
+              >
+                {utrNumber.length}/12 digits
+              </span>
+            </div>
 
             <input
               type="text"
+              inputMode="numeric"
               value={utrNumber}
-              onChange={(e) => setUtrNumber(e.target.value)}
-              placeholder="e.g. 412345678901 (from your payment receipt)"
-              maxLength={22}
+              onChange={(e) => setUtrNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
+              placeholder="Enter exact 12-digit UTR (e.g. 412345678901)"
+              maxLength={12}
               style={{
                 width: '100%',
                 padding: '0.75rem 0.9rem',
                 borderRadius: '8px',
-                border: (localError || errorMessage) ? '1px solid #ef4444' : '1px solid #cbd5e1',
-                fontSize: '0.88rem',
+                border: (localError || errorMessage) ? '1px solid #ef4444' : utrNumber.length === 12 ? '1px solid #16a34a' : '1px solid #cbd5e1',
+                fontSize: '0.95rem',
                 outline: 'none',
                 marginBottom: '0.4rem',
                 fontFamily: 'monospace',
-                letterSpacing: '0.04em',
+                letterSpacing: '0.12em',
+                fontWeight: 600,
               }}
             />
 
