@@ -198,7 +198,7 @@ export default function ProductDetail() {
           }
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         clearTimeout(timeoutId);
       });

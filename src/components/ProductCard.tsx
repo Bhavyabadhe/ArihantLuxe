@@ -13,10 +13,11 @@ export interface Product {
   image?: string | string[];
   images?: string[];
   imageUrl?: string;
-  badge?: string;
+  badge?: string | null;
   stock?: number;
   size?: string[];
   color?: string[];
+  createdAt?: string | Date;
 }
 
 interface ProductCardProps {
