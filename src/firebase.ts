@@ -88,7 +88,14 @@ export interface OrderDoc {
 // Local User Store Fallback (in case Firebase Email/Password is not enabled in Firebase Console)
 const LOCAL_USERS_KEY = 'arihant_auth_users';
 
-export function getLocalUsers(): Record<string, { email: string; passwordHash: string; fullName: string }> {
+export interface LocalUserData {
+  email: string;
+  passwordHash: string;
+  fullName: string;
+  phoneNumber?: string;
+}
+
+export function getLocalUsers(): Record<string, LocalUserData> {
   try {
     return JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '{}');
   } catch {
@@ -96,26 +103,90 @@ export function getLocalUsers(): Record<string, { email: string; passwordHash: s
   }
 }
 
-export function saveLocalUser(email: string, passwordHash: string, fullName: string) {
+export function saveLocalUser(email: string, passwordHash: string, fullName: string, phoneNumber?: string) {
   const users = getLocalUsers();
-  users[email.toLowerCase()] = { email: email.toLowerCase(), passwordHash, fullName };
+  const cleanPhone = phoneNumber ? phoneNumber.replace(/\D/g, '').slice(-10) : '';
+  const userRecord: LocalUserData = {
+    email: email.toLowerCase().trim(),
+    passwordHash,
+    fullName: fullName.trim(),
+    phoneNumber: cleanPhone,
+  };
+  users[email.toLowerCase().trim()] = userRecord;
+  if (cleanPhone) {
+    users[`phone_${cleanPhone}`] = userRecord;
+  }
   localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
 }
 
-// Seamless hybrid login: tries Firebase first, falls back to local user store
-export async function authenticateUser(email: string, password: string): Promise<{ email: string; fullName: string }> {
+// Seamless direct login with Email OR Mobile Number without OTP
+export async function authenticateUser(
+  identifier: string,
+  password: string
+): Promise<{ email: string; fullName: string; phoneNumber?: string }> {
+  const cleanIdentifier = identifier.trim();
+  const users = getLocalUsers();
+
+  let targetEmail = cleanIdentifier.toLowerCase();
+  let foundLocalUser: LocalUserData | undefined;
+
+  // Determine if identifier is a mobile number or email
+  const isEmail = cleanIdentifier.includes('@');
+  if (isEmail) {
+    targetEmail = cleanIdentifier.toLowerCase();
+    foundLocalUser = users[targetEmail];
+  } else {
+    // Mobile number lookup
+    const cleanDigits = cleanIdentifier.replace(/\D/g, '').slice(-10);
+    foundLocalUser = users[`phone_${cleanDigits}`];
+    if (!foundLocalUser) {
+      foundLocalUser = Object.values(users).find(
+        (u) => u.phoneNumber?.replace(/\D/g, '').slice(-10) === cleanDigits
+      );
+    }
+    // Also check saved user profiles
+    if (!foundLocalUser) {
+      try {
+        const profiles = JSON.parse(localStorage.getItem('arihant_user_profiles') || '{}');
+        const profile = profiles[`phone_${cleanDigits}`] || Object.values(profiles).find(
+          (p: any) => p?.phoneNumber?.replace(/\D/g, '').slice(-10) === cleanDigits
+        );
+        if (profile && (profile as any).email) {
+          targetEmail = (profile as any).email;
+          foundLocalUser = {
+            email: (profile as any).email,
+            passwordHash: '',
+            fullName: (profile as any).fullName || '',
+            phoneNumber: cleanDigits,
+          };
+        }
+      } catch {}
+    }
+    if (foundLocalUser) {
+      targetEmail = foundLocalUser.email;
+    } else {
+      targetEmail = `${cleanDigits}@arihantluxe.com`;
+    }
+  }
+
+  // 1. Try Firebase Authentication (Email/Password)
   try {
-    const cred = await fbSignIn(auth, email, password);
+    const cred = await fbSignIn(auth, targetEmail, password);
+    const resolvedPhone =
+      foundLocalUser?.phoneNumber || (!cleanIdentifier.includes('@') ? cleanIdentifier.replace(/\D/g, '').slice(-10) : '');
     return {
-      email: cred.user.email || email,
-      fullName: cred.user.displayName || email.split('@')[0] || 'User',
+      email: cred.user.email || targetEmail,
+      fullName: cred.user.displayName || foundLocalUser?.fullName || targetEmail.split('@')[0] || 'User',
+      phoneNumber: resolvedPhone,
     };
   } catch (error: any) {
-    // Check if user exists in local store fallback
-    const users = getLocalUsers();
-    const existing = users[email.toLowerCase()];
-    if (existing && existing.passwordHash === password) {
-      return { email: existing.email, fullName: existing.fullName };
+    // 2. Fall back to local users database
+    if (foundLocalUser && foundLocalUser.passwordHash === password) {
+      return {
+        email: foundLocalUser.email,
+        fullName: foundLocalUser.fullName,
+        phoneNumber: foundLocalUser.phoneNumber,
+      };
     }
 
     if (
@@ -124,24 +195,47 @@ export async function authenticateUser(email: string, password: string): Promise
       error.code === 'auth/wrong-password' ||
       error.code === 'auth/invalid-email'
     ) {
-      throw new Error('Invalid email or password.');
+      throw new Error('Invalid email/mobile number or password.');
     }
     if (error.code === 'auth/too-many-requests') {
       throw new Error('Too many failed login attempts. Please try again later.');
     }
+
+    if (foundLocalUser && foundLocalUser.passwordHash !== password) {
+      throw new Error('Incorrect password. Please try again.');
+    }
+
     throw new Error(error.message || 'Login failed. Please check your credentials.');
   }
 }
 
-// Seamless hybrid register: tries Firebase first, falls back to local user store if provider not enabled in Firebase console
-export async function registerUser(email: string, password: string, fullName: string): Promise<{ email: string; fullName: string }> {
+// Seamless register with Email, Mobile Number, Full Name & Password (No OTP required)
+export async function registerUser(
+  email: string,
+  password: string,
+  fullName: string,
+  phoneNumber?: string
+): Promise<{ email: string; fullName: string; phoneNumber?: string }> {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanName = fullName.trim();
+  const cleanPhone = phoneNumber ? phoneNumber.replace(/\D/g, '').slice(-10) : '';
+
+  // Check if already in local store
+  const users = getLocalUsers();
+  if (users[cleanEmail]) {
+    throw new Error('An account with this email address already exists.');
+  }
+  if (cleanPhone && users[`phone_${cleanPhone}`]) {
+    throw new Error('An account with this mobile number already exists.');
+  }
+
   try {
-    const cred = await fbSignUp(auth, email, password);
+    const cred = await fbSignUp(auth, cleanEmail, password);
     if (cred.user) {
-      await fbUpdateProfile(cred.user, { displayName: fullName });
+      await fbUpdateProfile(cred.user, { displayName: cleanName });
     }
-    saveLocalUser(email, password, fullName);
-    return { email, fullName };
+    saveLocalUser(cleanEmail, password, cleanName, cleanPhone);
+    return { email: cleanEmail, fullName: cleanName, phoneNumber: cleanPhone };
   } catch (error: any) {
     if (
       error.code === 'auth/operation-not-allowed' ||
@@ -150,12 +244,8 @@ export async function registerUser(email: string, password: string, fullName: st
       error.code === 'auth/configuration-not-found' ||
       error.code === 'auth/admin-restricted-operation'
     ) {
-      const users = getLocalUsers();
-      if (users[email.toLowerCase()]) {
-        throw new Error('An account with this email address already exists.');
-      }
-      saveLocalUser(email, password, fullName);
-      return { email, fullName };
+      saveLocalUser(cleanEmail, password, cleanName, cleanPhone);
+      return { email: cleanEmail, fullName: cleanName, phoneNumber: cleanPhone };
     }
     if (error.code === 'auth/email-already-in-use') {
       throw new Error('An account with this email address already exists.');
@@ -304,10 +394,21 @@ export async function verifyPhoneOtp(
   }
 }
 
-export async function createUserProfile(profile: { email: string; fullName: string }): Promise<void> {
+export async function createUserProfile(profile: {
+  email: string;
+  fullName: string;
+  phoneNumber?: string;
+}): Promise<void> {
   try {
+    const cleanEmail = profile.email.toLowerCase().trim();
+    const cleanPhone = profile.phoneNumber ? profile.phoneNumber.replace(/\D/g, '').slice(-10) : '';
+    const record = { ...profile, email: cleanEmail, phoneNumber: cleanPhone, updatedAt: Date.now() };
+
     const existing = JSON.parse(localStorage.getItem('arihant_user_profiles') || '{}');
-    existing[profile.email] = { ...profile, updatedAt: Date.now() };
+    existing[cleanEmail] = record;
+    if (cleanPhone) {
+      existing[`phone_${cleanPhone}`] = record;
+    }
     localStorage.setItem('arihant_user_profiles', JSON.stringify(existing));
   } catch (err) {
     console.warn('Failed to save profile:', err);
