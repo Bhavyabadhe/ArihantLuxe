@@ -237,6 +237,11 @@ export async function sendPhoneOtp(
     return confirmationResult;
   } catch (error: any) {
     console.error('sendPhoneOtp error:', error);
+    if (error.code === 'auth/operation-not-allowed') {
+      throw new Error(
+        'SMS to India (+91) is not yet enabled in Firebase Console. Please go to Firebase Console > Authentication > Settings > SMS Regions Policy and allow India (+91), or add your number under "Phone numbers for testing" for instant OTP testing.'
+      );
+    }
     if (error.code === 'auth/invalid-phone-number') {
       throw new Error('Invalid phone number. Please enter a valid 10-digit mobile number.');
     }
