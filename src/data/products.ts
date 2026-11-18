@@ -124,7 +124,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:54:57.627Z",
-    "image": "/api/products/39/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 38,
@@ -146,7 +146,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:29:02.627Z",
-    "image": "/api/products/38/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 37,
@@ -168,7 +168,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:26:11.773Z",
-    "image": "/api/products/37/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 36,
@@ -190,7 +190,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:24:29.530Z",
-    "image": "/api/products/36/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 35,
@@ -213,7 +213,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:18:58.023Z",
-    "image": "/api/products/35/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 34,
@@ -237,7 +237,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:12:04.156Z",
-    "image": "/api/products/34/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 33,
@@ -261,7 +261,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:02:23.254Z",
-    "image": "/api/products/33/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 30,
@@ -283,7 +283,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:46:35.758Z",
-    "image": "/api/products/30/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 29,
@@ -305,7 +305,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:44:13.045Z",
-    "image": "/api/products/29/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 28,
@@ -327,7 +327,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:43:31.321Z",
-    "image": "/api/products/28/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 27,
@@ -350,7 +350,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:42:39.366Z",
-    "image": "/api/products/27/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 26,
@@ -373,7 +373,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:41:19.599Z",
-    "image": "/api/products/26/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 25,
@@ -395,7 +395,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:40:24.823Z",
-    "image": "/api/products/25/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 24,
@@ -416,7 +416,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:39:45.702Z",
-    "image": "/api/products/24/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 23,
@@ -439,7 +439,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:39:10.140Z",
-    "image": "/api/products/23/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 21,
@@ -459,7 +459,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:37:18.450Z",
-    "image": "/api/products/21/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 19,
@@ -483,7 +483,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:33:31.070Z",
-    "image": "/api/products/19/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 18,
@@ -506,7 +506,7 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:33:02.997Z",
-    "image": "/api/products/18/image"
+    "image": "/products/product-.jpg"
   },
   {
     "id": 15,

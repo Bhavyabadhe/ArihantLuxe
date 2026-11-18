@@ -23,7 +23,19 @@ export async function GET(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    return NextResponse.json(product, {
+    const transformed = {
+      ...product,
+      image: product.image?.startsWith('data:image/')
+        ? `/products/product-${product.id}.jpg`
+        : product.image,
+      images: Array.isArray(product.images) && product.images.length > 0
+        ? product.images.map((img: string) =>
+            img?.startsWith('data:image/') ? `/products/product-${product.id}.jpg` : img
+          )
+        : (product.image?.startsWith('data:image/') ? [`/products/product-${product.id}.jpg`] : product.images),
+    };
+
+    return NextResponse.json(transformed, {
       headers: {
         'Cache-Control': 'public, max-age=120, s-maxage=600, stale-while-revalidate=86400',
       },

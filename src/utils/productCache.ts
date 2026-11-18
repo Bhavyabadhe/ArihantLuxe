@@ -1,8 +1,8 @@
 import { Product } from '../components/ProductCard';
 import { products as seedProducts, getProductSlug } from '../data/products';
 
-const CACHE_KEY = 'arihant_products_cache_v3';
-const CACHE_TIMESTAMP_KEY = 'arihant_products_cache_timestamp_v3';
+const CACHE_KEY = 'arihant_products_cache_v4';
+const CACHE_TIMESTAMP_KEY = 'arihant_products_cache_timestamp_v4';
 
 // In-memory runtime cache for lightning-fast 0ms tab switching
 let memoryCatalog: Product[] | null = null;

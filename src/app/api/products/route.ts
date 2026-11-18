@@ -17,7 +17,7 @@ export async function GET(request: Request) {
         SELECT 
           id, slug, name, price, category, description, badge, stock, size, color, "createdAt",
           CASE 
-            WHEN image LIKE 'data:image%' THEN '/api/products/' || id || '/image'
+            WHEN image LIKE 'data:image%' THEN '/products/product-' || id || '.jpg'
             ELSE image 
           END as image
         FROM "Product"
