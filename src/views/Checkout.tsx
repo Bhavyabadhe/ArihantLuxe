@@ -56,7 +56,9 @@ export default function Checkout() {
 
   // Checkout Information Fields
   const [fullName, setFullName] = useState(user?.fullName || '');
-  const [mobileNumber, setMobileNumber] = useState('');
+  const [mobileNumber, setMobileNumber] = useState(
+    user?.phoneNumber ? user.phoneNumber.replace('+91', '').trim() : ''
+  );
   const [houseNo, setHouseNo] = useState('');
   const [street, setStreet] = useState('');
   const [area, setArea] = useState('');

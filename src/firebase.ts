@@ -4,6 +4,9 @@ import {
   signInWithEmailAndPassword as fbSignIn,
   createUserWithEmailAndPassword as fbSignUp,
   updateProfile as fbUpdateProfile,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  type ConfirmationResult,
   type Auth,
 } from 'firebase/auth';
 import {
@@ -161,6 +164,138 @@ export async function registerUser(email: string, password: string, fullName: st
       throw new Error('Password should be at least 6 characters.');
     }
     throw new Error(error.message || 'Registration failed. Please try again.');
+  }
+}
+
+// ----------------------------------------------------
+// Phone Authentication (SMS / OTP) via Firebase Auth
+// ----------------------------------------------------
+
+export type { ConfirmationResult };
+
+/**
+ * Initialize or reset invisible RecaptchaVerifier for Phone Authentication
+ */
+export function setupRecaptcha(containerId: string = 'recaptcha-container'): RecaptchaVerifier {
+  if (typeof window === 'undefined') {
+    throw new Error('reCAPTCHA can only be initialized in the browser.');
+  }
+
+  // Clear existing verifier to prevent re-initialization errors
+  const w = window as any;
+  if (w.recaptchaVerifier) {
+    try {
+      w.recaptchaVerifier.clear();
+    } catch {}
+    w.recaptchaVerifier = null;
+  }
+
+  const verifier = new RecaptchaVerifier(auth, containerId, {
+    size: 'invisible',
+    callback: () => {
+      // reCAPTCHA solved
+    },
+    'expired-callback': () => {
+      console.warn('reCAPTCHA expired.');
+    },
+  });
+
+  w.recaptchaVerifier = verifier;
+  return verifier;
+}
+
+/**
+ * Format any Indian or international phone number to standard E.164 (+91XXXXXXXXXX)
+ */
+export function formatPhoneNumberE164(phone: string): string {
+  let cleaned = phone.trim().replace(/[\s-()]/g, '');
+  if (cleaned.startsWith('+')) {
+    return cleaned;
+  }
+  if (cleaned.startsWith('0')) {
+    cleaned = cleaned.slice(1);
+  }
+  if (cleaned.length === 10) {
+    return `+91${cleaned}`;
+  }
+  if (cleaned.startsWith('91') && cleaned.length === 12) {
+    return `+${cleaned}`;
+  }
+  return `+91${cleaned}`;
+}
+
+/**
+ * Send Phone Authentication OTP via Firebase
+ */
+export async function sendPhoneOtp(
+  phoneNumber: string,
+  verifier: RecaptchaVerifier
+): Promise<ConfirmationResult> {
+  const formatted = formatPhoneNumberE164(phoneNumber);
+  try {
+    const confirmationResult = await signInWithPhoneNumber(auth, formatted, verifier);
+    return confirmationResult;
+  } catch (error: any) {
+    console.error('sendPhoneOtp error:', error);
+    if (error.code === 'auth/invalid-phone-number') {
+      throw new Error('Invalid phone number. Please enter a valid 10-digit mobile number.');
+    }
+    if (error.code === 'auth/too-many-requests') {
+      throw new Error('Too many requests. Please wait a moment before requesting another OTP.');
+    }
+    if (error.code === 'auth/quota-exceeded') {
+      throw new Error('SMS quota exceeded for today. Please try again later.');
+    }
+    if (error.code === 'auth/captcha-check-failed') {
+      throw new Error('reCAPTCHA security check failed. Please refresh the page and try again.');
+    }
+    throw new Error(error.message || 'Failed to send OTP to your mobile number.');
+  }
+}
+
+/**
+ * Verify OTP code and sign in customer
+ */
+export async function verifyPhoneOtp(
+  confirmationResult: ConfirmationResult,
+  otpCode: string,
+  fullName?: string
+): Promise<{ email: string; fullName: string; phoneNumber: string }> {
+  try {
+    const userCredential = await confirmationResult.confirm(otpCode.trim());
+    const user = userCredential.user;
+
+    const phone = user.phoneNumber || '';
+    const cleanDigits = phone.replace(/\D/g, '');
+    const derivedEmail = user.email || `${cleanDigits || 'user'}@arihantluxe.com`;
+    const resolvedName = fullName?.trim() || user.displayName || (cleanDigits ? `Patron ${cleanDigits.slice(-4)}` : 'Valued Patron');
+
+    if (fullName?.trim() && !user.displayName) {
+      try {
+        await fbUpdateProfile(user, { displayName: fullName.trim() });
+      } catch {}
+    }
+
+    // Save user profile for persistence
+    await createUserProfile({
+      email: derivedEmail,
+      fullName: resolvedName,
+    });
+
+    return {
+      email: derivedEmail,
+      fullName: resolvedName,
+      phoneNumber: phone,
+    };
+  } catch (error: any) {
+    console.error('verifyPhoneOtp error:', error);
+    if (error.code === 'auth/invalid-verification-code') {
+      throw new Error('Invalid 6-digit OTP code. Please check your SMS and try again.');
+    }
+    if (error.code === 'auth/code-expired') {
+      throw new Error('The OTP code has expired. Please request a new OTP.');
+    }
+    throw new Error(error.message || 'OTP verification failed. Please try again.');
   }
 }
 
