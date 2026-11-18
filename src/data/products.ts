@@ -41,7 +41,10 @@ export const products: Product[] = [
     "size": [],
     "color": [],
     "createdAt": "2026-11-17T15:58:48.618Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/809844039_18099727544134417_8193846430289129640_n.heic.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/809844039_18099727544134417_8193846430289129640_n.heic.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/809844039_18099727544134417_8193846430289129640_n.heic.jpg"
+    ]
   },
   {
     "id": 44,
@@ -55,7 +58,10 @@ export const products: Product[] = [
     "size": [],
     "color": [],
     "createdAt": "2026-11-17T15:58:02.800Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/799308254_18097426241134417_1676211702489192134_n.heic.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/799308254_18097426241134417_1676211702489192134_n.heic.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/799308254_18097426241134417_1676211702489192134_n.heic.jpg"
+    ]
   },
   {
     "id": 43,
@@ -74,7 +80,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T15:57:26.748Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/811616477_18100195736134417_7952583195708772379_n.heic.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/811616477_18100195736134417_7952583195708772379_n.heic.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/811616477_18100195736134417_7952583195708772379_n.heic.jpg"
+    ]
   },
   {
     "id": 42,
@@ -88,7 +97,10 @@ export const products: Product[] = [
     "size": [],
     "color": [],
     "createdAt": "2026-11-17T15:56:53.344Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/799571031_18097425683134417_6526111532817425258_n.heic.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/799571031_18097425683134417_6526111532817425258_n.heic.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794930973/799571031_18097425683134417_6526111532817425258_n.heic.jpg"
+    ]
   },
   {
     "id": 41,
@@ -102,7 +114,10 @@ export const products: Product[] = [
     "size": [],
     "color": [],
     "createdAt": "2026-11-17T15:56:24.381Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794930974/811711018_18100224851134417_5540090349699950534_n.heic.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794930974/811711018_18100224851134417_5540090349699950534_n.heic.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794930974/811711018_18100224851134417_5540090349699950534_n.heic.jpg"
+    ]
   },
   {
     "id": 39,
@@ -124,7 +139,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:54:57.627Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-39.jpg",
+    "images": [
+      "/products/product-39.jpg"
+    ]
   },
   {
     "id": 38,
@@ -146,7 +164,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:29:02.627Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-38.jpg",
+    "images": [
+      "/products/product-38.jpg"
+    ]
   },
   {
     "id": 37,
@@ -168,7 +189,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:26:11.773Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-37.jpg",
+    "images": [
+      "/products/product-37.jpg"
+    ]
   },
   {
     "id": 36,
@@ -190,7 +214,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:24:29.530Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-36.jpg",
+    "images": [
+      "/products/product-36.jpg"
+    ]
   },
   {
     "id": 35,
@@ -213,7 +240,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:18:58.023Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-35.jpg",
+    "images": [
+      "/products/product-35.jpg"
+    ]
   },
   {
     "id": 34,
@@ -237,7 +267,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:12:04.156Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-34.jpg",
+    "images": [
+      "/products/product-34.jpg"
+    ]
   },
   {
     "id": 33,
@@ -261,7 +294,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T09:02:23.254Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-33.jpg",
+    "images": [
+      "/products/product-33.jpg"
+    ]
   },
   {
     "id": 30,
@@ -283,7 +319,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:46:35.758Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-30.jpg",
+    "images": [
+      "/products/product-30.jpg"
+    ]
   },
   {
     "id": 29,
@@ -305,7 +344,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:44:13.045Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-29.jpg",
+    "images": [
+      "/products/product-29.jpg"
+    ]
   },
   {
     "id": 28,
@@ -327,7 +369,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:43:31.321Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-28.jpg",
+    "images": [
+      "/products/product-28.jpg"
+    ]
   },
   {
     "id": 27,
@@ -350,7 +395,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:42:39.366Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-27.jpg",
+    "images": [
+      "/products/product-27.jpg"
+    ]
   },
   {
     "id": 26,
@@ -373,7 +421,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:41:19.599Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-26.jpg",
+    "images": [
+      "/products/product-26.jpg"
+    ]
   },
   {
     "id": 25,
@@ -395,7 +446,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:40:24.823Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-25.jpg",
+    "images": [
+      "/products/product-25.jpg"
+    ]
   },
   {
     "id": 24,
@@ -416,7 +470,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:39:45.702Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-24.jpg",
+    "images": [
+      "/products/product-24.jpg"
+    ]
   },
   {
     "id": 23,
@@ -439,7 +496,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:39:10.140Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-23.jpg",
+    "images": [
+      "/products/product-23.jpg"
+    ]
   },
   {
     "id": 21,
@@ -459,7 +519,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:37:18.450Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-21.jpg",
+    "images": [
+      "/products/product-21.jpg"
+    ]
   },
   {
     "id": 19,
@@ -483,7 +546,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:33:31.070Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-19.jpg",
+    "images": [
+      "/products/product-19.jpg"
+    ]
   },
   {
     "id": 18,
@@ -506,7 +572,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-17T03:33:02.997Z",
-    "image": "/products/product-.jpg"
+    "image": "/products/product-18.jpg",
+    "images": [
+      "/products/product-18.jpg"
+    ]
   },
   {
     "id": 15,
@@ -522,7 +591,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-16T14:51:52.904Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794468708/SaveInta.com_779001377_18092923688134417_7243571650961316643_n.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794468708/SaveInta.com_779001377_18092923688134417_7243571650961316643_n.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794468708/SaveInta.com_779001377_18092923688134417_7243571650961316643_n.jpg"
+    ]
   },
   {
     "id": 13,
@@ -538,7 +610,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-16T14:49:21.271Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794468704/SaveInta.com_839065085_18105269864134417_5172944859217356965_n.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794468704/SaveInta.com_839065085_18105269864134417_5172944859217356965_n.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794468704/SaveInta.com_839065085_18105269864134417_5172944859217356965_n.jpg"
+    ]
   },
   {
     "id": 4,
@@ -554,7 +629,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-16T14:09:49.491Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794468702/SaveInta.com_837459884_18105269036134417_5928436424598684292_n.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794468702/SaveInta.com_837459884_18105269036134417_5928436424598684292_n.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794468702/SaveInta.com_837459884_18105269036134417_5928436424598684292_n.jpg"
+    ]
   },
   {
     "id": 3,
@@ -570,7 +648,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-16T14:09:49.268Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794468700/SaveInta.com_836084409_18105268616134417_8283239916345672048_n.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794468700/SaveInta.com_836084409_18105268616134417_8283239916345672048_n.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794468700/SaveInta.com_836084409_18105268616134417_8283239916345672048_n.jpg"
+    ]
   },
   {
     "id": 2,
@@ -586,7 +667,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-16T14:09:49.042Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794468676/SaveInta.com_783590034_18092923721134417_6321730807047660846_n.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794468676/SaveInta.com_783590034_18092923721134417_6321730807047660846_n.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794468676/SaveInta.com_783590034_18092923721134417_6321730807047660846_n.jpg"
+    ]
   },
   {
     "id": 1,
@@ -602,7 +686,10 @@ export const products: Product[] = [
     ],
     "color": [],
     "createdAt": "2026-11-16T14:09:48.590Z",
-    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794464738/SaveInta.com_790113459_18100362803134417_1032884424859532077_n.jpg"
+    "image": "https://res.cloudinary.com/deotzatzd/image/upload/v1794464738/SaveInta.com_790113459_18100362803134417_1032884424859532077_n.jpg",
+    "images": [
+      "https://res.cloudinary.com/deotzatzd/image/upload/v1794464738/SaveInta.com_790113459_18100362803134417_1032884424859532077_n.jpg"
+    ]
   }
 ];
 

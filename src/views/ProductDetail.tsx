@@ -62,8 +62,16 @@ function extractImages(prod: any): string[] {
     parseValue(prod.imageUrl);
   }
 
+  // Fix any empty id in static path or broken dynamic route
+  const sanitizedResults = results.map((img) => {
+    if (img.includes('product-.jpg') || img.includes('/api/products/')) {
+      return `/products/product-${prod.id}.jpg`;
+    }
+    return img;
+  });
+
   // De-duplicate while preserving order
-  const unique = Array.from(new Set(results));
+  const unique = Array.from(new Set(sanitizedResults));
   return unique.length > 0 ? unique : ['https://placehold.co/600x600/png'];
 }
 

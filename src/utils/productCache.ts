@@ -1,28 +1,41 @@
 import { Product } from '../components/ProductCard';
 import { products as seedProducts, getProductSlug } from '../data/products';
 
-const CACHE_KEY = 'arihant_products_cache_v4';
-const CACHE_TIMESTAMP_KEY = 'arihant_products_cache_timestamp_v4';
+const CACHE_KEY = 'arihant_products_cache_v5';
+const CACHE_TIMESTAMP_KEY = 'arihant_products_cache_timestamp_v5';
 
 // In-memory runtime cache for lightning-fast 0ms tab switching
 let memoryCatalog: Product[] | null = null;
 
+function sanitizeProduct(p: any): Product {
+  let img = typeof p.image === 'string' ? p.image : (Array.isArray(p.image) ? p.image[0] : '');
+  if (!img || img === '/products/product-.jpg' || img.includes('/api/products/')) {
+    img = `/products/product-${p.id}.jpg`;
+  }
+  return {
+    ...p,
+    image: img,
+  };
+}
+
 // Convert static seed products to the standard Product interface
 function getSeedProducts(): Product[] {
-  return seedProducts.map((p) => ({
-    id: p.id,
-    slug: getProductSlug(p),
-    name: p.name,
-    price: p.price,
-    category: p.category || 'Clothing',
-    description: p.description,
-    image: Array.isArray(p.image) ? p.image[0] : p.image,
-    images: Array.isArray(p.image) ? p.image : [p.image],
-    badge: p.badge,
-    stock: 15,
-    size: p.size,
-    color: p.color,
-  }));
+  return seedProducts.map((p) =>
+    sanitizeProduct({
+      id: p.id,
+      slug: getProductSlug(p),
+      name: p.name,
+      price: p.price,
+      category: p.category || 'Clothing',
+      description: p.description,
+      image: Array.isArray(p.image) ? p.image[0] : p.image,
+      images: Array.isArray(p.image) ? p.image : [p.image],
+      badge: p.badge,
+      stock: 15,
+      size: p.size,
+      color: p.color,
+    })
+  );
 }
 
 /**
@@ -40,8 +53,8 @@ export function getInitialProducts(): Product[] {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          memoryCatalog = parsed;
-          return parsed;
+          memoryCatalog = parsed.map(sanitizeProduct);
+          return memoryCatalog;
         }
       }
     } catch (e) {

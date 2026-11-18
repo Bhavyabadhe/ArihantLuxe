@@ -28,43 +28,50 @@ interface ProductCardProps {
 function resolveMainImage(product: Product): string {
   if (!product) return 'https://placehold.co/600x600/png';
 
+  let finalImage = 'https://placehold.co/600x600/png';
+
   // 1. Check images array
   if (Array.isArray(product.images) && product.images.length > 0) {
     const first = product.images.find((img) => typeof img === 'string' && img.trim().length > 0);
     if (first) {
       const trimmed = first.trim();
-      if (trimmed.startsWith('data:image/')) return trimmed;
-      if (trimmed.includes(',') && !trimmed.startsWith('data:')) return trimmed.split(',')[0].trim();
-      return trimmed;
+      if (trimmed.startsWith('data:image/')) finalImage = trimmed;
+      else if (trimmed.includes(',') && !trimmed.startsWith('data:')) finalImage = trimmed.split(',')[0].trim();
+      else finalImage = trimmed;
     }
   }
 
-  // 2. Check imageUrl or image
-  const raw = product.imageUrl || product.image;
-  if (Array.isArray(raw) && raw.length > 0) {
-    const first = raw.find((img) => typeof img === 'string' && img.trim().length > 0);
-    if (first) return first.trim();
+  // 2. Check imageUrl or image if not found yet
+  if (finalImage === 'https://placehold.co/600x600/png') {
+    const raw = product.imageUrl || product.image;
+    if (Array.isArray(raw) && raw.length > 0) {
+      const first = raw.find((img) => typeof img === 'string' && img.trim().length > 0);
+      if (first) finalImage = first.trim();
+    } else if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (trimmed.startsWith('data:image/')) finalImage = trimmed;
+      else if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const first = parsed.find((img: any) => typeof img === 'string' && img.trim().length > 0);
+            if (first) finalImage = first.trim();
+          }
+        } catch { }
+      } else if (trimmed.includes(',') && !trimmed.startsWith('data:')) {
+        finalImage = trimmed.split(',')[0].trim();
+      } else if (trimmed) {
+        finalImage = trimmed;
+      }
+    }
   }
 
-  if (typeof raw === 'string') {
-    const trimmed = raw.trim();
-    if (trimmed.startsWith('data:image/')) return trimmed;
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const first = parsed.find((img: any) => typeof img === 'string' && img.trim().length > 0);
-          if (first) return first.trim();
-        }
-      } catch { }
-    }
-    if (trimmed.includes(',') && !trimmed.startsWith('data:')) {
-      return trimmed.split(',')[0].trim();
-    }
-    if (trimmed) return trimmed;
+  // Fix any empty id in static path or broken dynamic route
+  if (finalImage.includes('product-.jpg') || finalImage.includes('/api/products/')) {
+    return `/products/product-${product.id}.jpg`;
   }
 
-  return 'https://placehold.co/600x600/png';
+  return finalImage;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
