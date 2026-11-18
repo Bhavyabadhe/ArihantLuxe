@@ -229,7 +229,7 @@ const Account: React.FC = () => {
                                   Estimated Delivery: {new Date(order.createdAt + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </span>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                  Carrier: Arihant Luxe Express
+                                  Carrier: Amazon Express
                                 </span>
                               </div>
 
