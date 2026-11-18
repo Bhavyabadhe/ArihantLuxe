@@ -653,6 +653,34 @@ export function subscribeProductReviews(
   const localCached = getLocalProductReviews(cleanSlug);
   if (localCached.length > 0) {
     onReviews(localCached);
+
+    // Auto-sync any locally saved reviews that haven't reached Firestore yet (e.g. temporary ID rev_*)
+    const unsynced = localCached.filter((r) => String(r.id).startsWith('rev_'));
+    if (unsynced.length > 0) {
+      unsynced.forEach(async (rev) => {
+        try {
+          const docRef = await addDoc(collection(db, 'product_reviews'), {
+            productSlug: cleanSlug,
+            productId: productId ? String(productId) : '',
+            name: rev.name,
+            city: rev.city,
+            rating: rev.rating,
+            title: rev.title,
+            comment: rev.comment,
+            verified: rev.verified,
+            helpful: rev.helpful || 1,
+            createdAt: rev.createdAt || Date.now(),
+          });
+          const current = getLocalProductReviews(cleanSlug);
+          const updated = current.map((item) =>
+            item.id === rev.id ? { ...item, id: docRef.id } : item
+          );
+          saveLocalProductReviews(cleanSlug, updated);
+        } catch (err: any) {
+          console.warn('Sync pending Firestore review rules:', err?.message);
+        }
+      });
+    }
   }
 
   // 2. Realtime Firestore listener
