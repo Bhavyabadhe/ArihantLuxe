@@ -68,6 +68,7 @@ export default function Fashion() {
         />
         <div className="category-hero-content">
           <div className="breadcrumbs">
+
             <Link to="/">Home</Link>
             <span>/</span>
             <span>Fashion</span>

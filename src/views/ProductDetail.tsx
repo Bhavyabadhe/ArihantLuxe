@@ -200,15 +200,15 @@ export default function ProductDetail() {
       return [
         {
           id: 1,
-          name: 'Harshit Sharma',
-          city: 'Jaipur',
-          rating: 5,
-          date: 'Abhi Abhi',
+          name: 'Aay Sharma',
+          city: 'Udaipur',
+          rating: 4,
+          date: '1 day ago',
           verified: true,
-          title: 'Mai AAyu yani ki harshit sharma, ye shapat leta hu ki..',
+          title: 'Good product!',
           comment:
-            'Mai MOTA hu MOTA the aur mota hi rahunga.',
-          helpful: 24,
+            'I am satisfied with the product!',
+          helpful: 19,
         },
         {
           id: 2,
@@ -254,11 +254,11 @@ export default function ProductDetail() {
           name: 'Harshit Sharma',
           city: 'Jaipur',
           rating: 5,
-          date: 'Abhi Abhi',
+          date: '2 weeks ago',
           verified: true,
-          title: 'Mai AAyu yani ki harshit sharma, ye shapat leta hu ki..',
+          title: 'Impressive!',
           comment:
-            'Mai MOTA hu MOTA the aur mota hi rahunga.',
+            'Worth every single rupee!',
           helpful: 24,
         },
         {

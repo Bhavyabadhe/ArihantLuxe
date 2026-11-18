@@ -61,10 +61,18 @@ export interface OrderDoc {
   shippingAddress: {
     email: string;
     fullName: string;
+    name?: string;
     address: string;
+    houseNo?: string;
+    street?: string;
+    area?: string;
+    landmark?: string;
     city: string;
+    state?: string;
+    pincode?: string;
     country: string;
     contactNumber?: string;
+    mobileNumber?: string;
   };
   contactNumber?: string;
   status: string;

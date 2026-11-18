@@ -9,17 +9,62 @@ import { YouPiCheckoutModal } from '../components/YouPiCheckoutModal';
 const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || 'arihantluxe@nyes';
 const UPI_NAME = process.env.NEXT_PUBLIC_UPI_NAME || 'Arihant Jain';
 
+const INDIAN_STATES = [
+  'Andaman and Nicobar Islands',
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chandigarh',
+  'Chhattisgarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jammu and Kashmir',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Ladakh',
+  'Lakshadweep',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Puducherry',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+];
+
 export default function Checkout() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const items = useSelector((state: RootState) => state.cart.items);
   const { user, isAuthenticated, isInitialized } = useSelector((state: RootState) => state.auth);
 
-  const [email, setEmail] = useState(user?.email || '');
+  // Checkout Information Fields
   const [fullName, setFullName] = useState(user?.fullName || '');
-  const [address, setAddress] = useState('');
-  const [contactNumber, setContactNumber] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [houseNo, setHouseNo] = useState('');
+  const [street, setStreet] = useState('');
+  const [area, setArea] = useState('');
+  const [landmark, setLandmark] = useState('');
   const [city, setCity] = useState('');
+  const [state, setState] = useState('Rajasthan');
+  const [pincode, setPincode] = useState('');
+  const [email, setEmail] = useState(user?.email || '');
   const [country] = useState('India');
 
   // YouPI-PG Gateway & UTR state
@@ -47,10 +92,83 @@ export default function Checkout() {
   const total = subtotal + shipping;
 
   const validateShipping = (): boolean => {
-    if (!email.trim() || !fullName.trim() || !contactNumber.trim() || !address.trim() || !city.trim() || !country.trim()) {
+    if (!fullName.trim()) {
       setNotification({
         title: 'Missing Information',
-        message: 'Please fill in all shipping details to proceed with checkout.',
+        message: 'Please enter your Name.',
+        type: 'warning',
+      });
+      return false;
+    }
+    if (!mobileNumber.trim()) {
+      setNotification({
+        title: 'Missing Information',
+        message: 'Please enter your Mobile/WhatsApp No.',
+        type: 'warning',
+      });
+      return false;
+    }
+    const cleanDigits = mobileNumber.replace(/\D/g, '');
+    if (cleanDigits.length < 10) {
+      setNotification({
+        title: 'Invalid Mobile Number',
+        message: 'Please enter a valid 10-digit Mobile/WhatsApp number.',
+        type: 'warning',
+      });
+      return false;
+    }
+    if (!houseNo.trim()) {
+      setNotification({
+        title: 'Missing Information',
+        message: 'Please enter your House/Flat No.',
+        type: 'warning',
+      });
+      return false;
+    }
+    if (!street.trim()) {
+      setNotification({
+        title: 'Missing Information',
+        message: 'Please enter your Street/Road.',
+        type: 'warning',
+      });
+      return false;
+    }
+    if (!area.trim()) {
+      setNotification({
+        title: 'Missing Information',
+        message: 'Please enter your Area/Locality.',
+        type: 'warning',
+      });
+      return false;
+    }
+    if (!city.trim()) {
+      setNotification({
+        title: 'Missing Information',
+        message: 'Please enter your City.',
+        type: 'warning',
+      });
+      return false;
+    }
+    if (!state.trim()) {
+      setNotification({
+        title: 'Missing Information',
+        message: 'Please select your State.',
+        type: 'warning',
+      });
+      return false;
+    }
+    if (!pincode.trim() || pincode.trim().length < 6) {
+      setNotification({
+        title: 'Invalid PIN Code',
+        message: 'Please enter a valid 6-digit PIN Code.',
+        type: 'warning',
+      });
+      return false;
+    }
+    if (!email.trim()) {
+      setNotification({
+        title: 'Missing Information',
+        message: 'Please enter your Email address for order tracking.',
         type: 'warning',
       });
       return false;
@@ -73,6 +191,18 @@ export default function Checkout() {
     setUtrError('');
 
     try {
+      const fullAddress = [
+        houseNo.trim(),
+        street.trim(),
+        area.trim(),
+        landmark.trim() ? `Near ${landmark.trim()}` : '',
+        city.trim(),
+        `${state.trim()} - ${pincode.trim()}`,
+        'India',
+      ]
+        .filter(Boolean)
+        .join(', ');
+
       const orderId = await createOrder({
         userEmail: email.trim(),
         userFullName: fullName.trim(),
@@ -80,8 +210,23 @@ export default function Checkout() {
         subtotal: subtotal,
         shippingFee: shipping,
         total: total,
-        shippingAddress: { email: email.trim(), fullName: fullName.trim(), address: address.trim(), city: city.trim(), country },
-        contactNumber: contactNumber.trim(),
+        shippingAddress: {
+          email: email.trim(),
+          fullName: fullName.trim(),
+          name: fullName.trim(),
+          address: fullAddress,
+          houseNo: houseNo.trim(),
+          street: street.trim(),
+          area: area.trim(),
+          landmark: landmark.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          pincode: pincode.trim(),
+          country: 'India',
+          contactNumber: mobileNumber.trim(),
+          mobileNumber: mobileNumber.trim(),
+        },
+        contactNumber: mobileNumber.trim(),
         status: 'paid_pending_verification',
         paymentMethod: 'youpi_upi',
         paymentId: cleanUtr,
@@ -125,71 +270,171 @@ export default function Checkout() {
           </div>
 
           <div className="checkout-form-group">
-            <h3 className="serif">Contact & Shipping</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
+            <h3 className="serif" style={{ fontSize: '1.4rem', marginBottom: '0.4rem' }}>
+              Shipping Information
+            </h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+              Please enter your full delivery address and mobile number for dispatch updates.
+            </p>
+
+            {/* Row 1: Name & Mobile/WhatsApp No. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
               <div className="auth-field">
-                <label className="auth-label">EMAIL</label>
-                <input
-                  type="email"
-                  className="auth-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                />
-              </div>
-              <div className="auth-field">
-                <label className="auth-label">FULL NAME</label>
+                <label className="auth-label">
+                  Name <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
                 <input
                   type="text"
                   className="auth-input"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Your Name"
+                  placeholder="Enter full recipient name"
+                  required
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">
+                  Mobile/WhatsApp No. <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
+                <input
+                  type="tel"
+                  className="auth-input"
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value)}
+                  placeholder="10-digit mobile number"
+                  maxLength={13}
+                  required
                 />
               </div>
             </div>
 
-            <div className="auth-field" style={{ marginTop: '1.5rem' }}>
-              <label className="auth-label">ADDRESS</label>
-              <input
-                type="text"
-                className="auth-input"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Street address, apartment, building, etc."
-              />
-            </div>
-
-            <div className="auth-field" style={{ marginTop: '1.5rem' }}>
-              <label className="auth-label">Contact Number</label>
-              <input
-                type="number"
-                className="auth-input"
-                value={contactNumber}
-                onChange={(e) => setContactNumber(e.target.value)}
-                placeholder="Enter your contact number"
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
+            {/* Row 2: Email & House/Flat No. */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
               <div className="auth-field">
-                <label className="auth-label">CITY</label>
+                <label className="auth-label">
+                  Email Address <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  className="auth-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="For invoice & order tracking"
+                  required
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">
+                  House/Flat No. <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="auth-input"
+                  value={houseNo}
+                  onChange={(e) => setHouseNo(e.target.value)}
+                  placeholder="e.g. Flat 302, House No. 12"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Street/Road & Area/Locality */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div className="auth-field">
+                <label className="auth-label">
+                  Street/Road <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="auth-input"
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  placeholder="e.g. MG Road, 5th Cross Street"
+                  required
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">
+                  Area/Locality <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="auth-input"
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                  placeholder="e.g. Indiranagar, Civil Lines, Bhankrota"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Row 4: Landmark & City */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div className="auth-field">
+                <label className="auth-label">
+                  Landmark <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'none' }}>(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  className="auth-input"
+                  value={landmark}
+                  onChange={(e) => setLandmark(e.target.value)}
+                  placeholder="e.g. Near City Mall, Opp. Axis Bank"
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">
+                  City <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
                 <input
                   type="text"
                   className="auth-input"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  placeholder="City"
+                  placeholder="e.g. Jaipur, Mumbai, New Delhi"
+                  required
                 />
               </div>
+            </div>
+
+            {/* Row 5: State & PIN Code */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
               <div className="auth-field">
-                <label className="auth-label">COUNTRY</label>
+                <label className="auth-label">
+                  State <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
+                <select
+                  className="auth-input"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  required
+                  style={{ cursor: 'pointer' }}
+                >
+                  <option value="">Select State / UT</option>
+                  {INDIAN_STATES.map((st) => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">
+                  PIN Code <span style={{ color: '#b91c1c' }}>*</span>
+                </label>
                 <input
                   type="text"
                   className="auth-input"
-                  value={country}
-                  disabled
-                  style={{ opacity: 0.7, cursor: 'not-allowed' }}
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="6-digit PIN code (e.g. 302026)"
+                  maxLength={6}
+                  required
                 />
               </div>
             </div>

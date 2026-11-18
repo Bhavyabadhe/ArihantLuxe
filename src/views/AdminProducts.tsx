@@ -1479,14 +1479,14 @@ export default function AdminProducts() {
                         </span>
                         <strong>{ord.userFullName || 'Guest'}</strong>
                         <div style={{ color: 'var(--text-muted)' }}>{ord.userEmail}</div>
-                        {(ord.contactNumber || addr.contactNumber) && (
+                        {(ord.contactNumber || addr.contactNumber || addr.mobileNumber) && (
                           <div style={{ color: '#0369a1', fontWeight: 600, marginTop: '0.2rem', fontSize: '0.78rem' }}>
-                            📞 {ord.contactNumber || addr.contactNumber}
+                            📞 {ord.contactNumber || addr.contactNumber || addr.mobileNumber}
                           </div>
                         )}
-                        {addr.address && (
-                          <div style={{ color: '#475569', marginTop: '0.25rem', fontSize: '0.78rem' }}>
-                            {addr.address}, {addr.city}, {addr.country}
+                        {(addr.address || addr.houseNo) && (
+                          <div style={{ color: '#475569', marginTop: '0.25rem', fontSize: '0.78rem', lineHeight: '1.4' }}>
+                            📍 {addr.address || [addr.houseNo, addr.street, addr.area, addr.landmark ? `Near ${addr.landmark}` : '', addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}
                           </div>
                         )}
                       </div>
