@@ -31,8 +31,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json(products, {
       headers: {
-        // Cache at Vercel Edge for 60s, stale-while-revalidate for 5 minutes
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        // Cache in browser for 2 minutes, at Vercel Edge CDN for 10 minutes, and revalidate in background
+        'Cache-Control': 'public, max-age=120, s-maxage=600, stale-while-revalidate=86400',
       },
     });
   } catch (error) {

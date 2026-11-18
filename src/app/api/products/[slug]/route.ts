@@ -23,7 +23,11 @@ export async function GET(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    return NextResponse.json(product);
+    return NextResponse.json(product, {
+      headers: {
+        'Cache-Control': 'public, max-age=120, s-maxage=600, stale-while-revalidate=86400',
+      },
+    });
   } catch (error) {
     console.error('Failed to fetch product from Prisma by slug:', error);
     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });

@@ -91,7 +91,13 @@ export default function ProductCard({ product }: ProductCardProps) {
       <Link to={`/product/${slug}`} state={{ product }}>
         <div className="product-img-wrap">
           {product.badge && <span className="product-badge">{product.badge}</span>}
-          <img className="product-img" src={mainImage} alt={product.name} />
+          <img
+            className="product-img"
+            src={mainImage}
+            alt={product.name}
+            loading="lazy"
+            decoding="async"
+          />
           <div className="product-actions">
             <button
               className="quick-add-btn"

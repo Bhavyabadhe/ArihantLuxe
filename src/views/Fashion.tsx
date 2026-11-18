@@ -1,30 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard, { Product } from '../components/ProductCard';
+import { getInitialProducts, fetchProductsSWR } from '../utils/productCache';
 
 export default function Fashion() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(() => getInitialProducts());
+  const [loading, setLoading] = useState<boolean>(() => products.length === 0);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('featured');
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetch('/api/products')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setProducts(data);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Failed to load fashion products:', err);
-        setLoading(false);
-      });
+    fetchProductsSWR((fresh) => {
+      setProducts(fresh);
+      setLoading(false);
+    }).then(() => {
+      setLoading(false);
+    });
   }, []);
 
   // Filter for fashion / clothing items

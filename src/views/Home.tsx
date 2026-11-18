@@ -1,33 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard, { Product } from '../components/ProductCard';
+import { getInitialProducts, fetchProductsSWR } from '../utils/productCache';
 
 const DEFAULT_CATEGORIES = ['All', 'Clothing', 'Jewellery'];
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Synchronous 0ms render from memory or localStorage cache
+  const [products, setProducts] = useState<Product[]>(() => getInitialProducts());
+  const [loading, setLoading] = useState<boolean>(() => products.length === 0);
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch('/api/products')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setProducts(data);
-        } else {
-          console.warn('API returned non-array data:', data);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Failed to load products from database:', err);
-        setLoading(false);
-      });
+    // Stale-While-Revalidate: update in the background without blocking the UI
+    fetchProductsSWR((fresh) => {
+      setProducts(fresh);
+      setLoading(false);
+    }).then(() => {
+      setLoading(false);
+    });
   }, []);
 
   // Compute category tabs dynamically from fetched products
@@ -51,7 +43,7 @@ export default function Home() {
       {/* Hero */}
       <section className="hero">
         <div className="hero-img-container">
-          <img src="/hero.png" alt="Arihant Luxe Collection" />
+          <img src="https://res.cloudinary.com/deotzatzd/image/upload/v1795019708/hero.png" alt="Arihant Luxe Collection" />
         </div>
         <div className="hero-content">
           <p className="hero-sub">The New Standard</p>

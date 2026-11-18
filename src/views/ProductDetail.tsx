@@ -3,6 +3,7 @@ import { useParams, Link, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
 import ProductCard, { Product } from '../components/ProductCard';
+import { getCachedProductBySlugOrId, getInitialProducts } from '../utils/productCache';
 import {
   CustomerReview,
   subscribeProductReviews,
@@ -72,8 +73,8 @@ export default function ProductDetail() {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  // Instant prefill from router state if user navigated from catalog
-  const passedProduct = (location.state as any)?.product;
+  // Instant prefill: 1. Router state, 2. Local/memory cache (0ms instant render!)
+  const passedProduct = (location.state as any)?.product || getCachedProductBySlugOrId(slug);
   const [product, setProduct] = useState<any>(passedProduct || null);
   const [loading, setLoading] = useState<boolean>(!passedProduct);
   const [addedMessage, setAddedMessage] = useState(false);
@@ -98,8 +99,13 @@ export default function ProductDetail() {
     }
   }, [product]);
 
-  // Related products from collection
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  // Related products from collection: initialize from cache immediately
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>(() => {
+    const cached = getInitialProducts();
+    return cached
+      .filter((p) => String(p.id) !== String(passedProduct?.id) && p.slug !== slug)
+      .slice(0, 4);
+  });
 
   // Accordion state
   const [openAccordion, setOpenAccordion] = useState<string>('specs');
@@ -125,13 +131,15 @@ export default function ProductDetail() {
     return () => unsubscribe();
   }, [slug, product?.id]);
 
-  // Fetch full product data (including all gallery images) from database
+  // Fetch full product data with timeout protection so page never hangs
   useEffect(() => {
     if (!slug) return;
 
     let isMounted = true;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second safety timeout
 
-    fetch(`/api/products/${encodeURIComponent(slug)}`)
+    fetch(`/api/products/${encodeURIComponent(slug)}`, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error('Not found');
         return res.json();
@@ -143,15 +151,21 @@ export default function ProductDetail() {
         }
       })
       .catch((err) => {
-        console.error('Fetch error:', err);
+        if (err.name !== 'AbortError') {
+          console.warn('Product fetch notice:', err.message);
+        }
         if (isMounted && !passedProduct) {
-          setProduct(null);
           setLoading(false);
         }
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
       });
 
     return () => {
       isMounted = false;
+      controller.abort();
+      clearTimeout(timeoutId);
     };
   }, [slug]);
 
@@ -167,19 +181,32 @@ export default function ProductDetail() {
     }
   }, [product]);
 
-  // Fetch related products from database (optimized lightweight query)
+  // Fetch fresh related products from database (non-blocking)
   useEffect(() => {
-    fetch('/api/products?limit=8')
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    fetch('/api/products?limit=8', { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
           const others = data.filter(
             (p: any) => String(p.id) !== String(product?.id) && p.slug !== slug
           );
-          setRelatedProducts(others.slice(0, 4));
+          if (others.length > 0) {
+            setRelatedProducts(others.slice(0, 4));
+          }
         }
       })
-      .catch(() => { });
+      .catch(() => {})
+      .finally(() => {
+        clearTimeout(timeoutId);
+      });
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
   }, [slug, product?.id]);
 
   // Category classification
